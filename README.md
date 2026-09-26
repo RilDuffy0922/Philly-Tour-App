@@ -71,3 +71,5 @@ No coding needed. Open `WaterwayTours/Resources/tours.json` and add an entry fol
 ## If you want it on the App Store or TestFlight instead
 
 That requires a paid Apple Developer Program membership ($99/year), which this project does not assume you have. If you get one later, the signing setup in this project (team `9YP4VNUU95`, bundle ID `com.bramillan.waterwaytours`) is a starting point, but a different account will need its own bundle ID and team selected in Signing & Capabilities.
+
+## Team: Devon Haydan, Bavanan Bramillan, Riley Duffy, Channtera Kong, Tai Do
