@@ -1,0 +1,134 @@
+[
+  {
+    "id": "philly-schuylkill",
+    "city": "Philadelphia",
+    "waterway": "Schuylkill River",
+    "name": "Schuylkill Banks Ride",
+    "summary": "Ride downstream from Boathouse Row to America's oldest surviving botanic garden.",
+    "mode": "bike",
+    "stops": [
+      {
+        "id": "boathouse-row",
+        "name": "Boathouse Row",
+        "latitude": 39.9695,
+        "longitude": -75.1874,
+        "radius": 120,
+        "narrationScript": "Welcome to Boathouse Row. These historic boathouses along the Schuylkill are home to the rowing clubs of the Schuylkill Navy, founded in 1858 and one of the oldest amateur athletic governing bodies in the United States. On most mornings you'll see crews gliding past, and at night the boathouses are outlined in lights that reflect off the water, one of the most photographed views in Philadelphia.",
+        "funFacts": ["Since 1979, Boathouse Row has been outlined in lights at night. Splashtastic!", "Grace Kelly's dad, John B. Kelly Sr., rowed out of one of these clubhouses. Talk about a splash of fame!", "I'm a great swimmer, but these rowers are on another level of paddle power."],
+        "trivia": {
+          "question": "The rowing clubs of Boathouse Row belong to an organization founded in 1858. What is it called?",
+          "options": ["The Schuylkill Navy", "The Delaware Fleet", "The Fairmount Crew Society", "The Philadelphia Rowing League"],
+          "correctIndex": 0
+        }
+      },
+      {
+        "id": "fairmount-water-works",
+        "name": "Fairmount Water Works",
+        "latitude": 39.9658,
+        "longitude": -75.1830,
+        "radius": 90,
+        "narrationScript": "You've reached the Fairmount Water Works. Beginning in 1812, Philadelphia built one of the nation's first municipal water systems here, using the river to pump water up to reservoirs on the hill where the Philadelphia Museum of Art stands today. Its classical buildings and gardens became a tourist attraction of their own, drawing visitors from around the world, including Charles Dickens.",
+        "funFacts": ["Charles Dickens visited in 1842 and raved about it. Even famous writers love a good waterfront!", "In the 1800s, this was one of Philly's top tourist attractions. Pumping water was a big deal!", "Water was pumped uphill to a reservoir right where the Art Museum stands today."],
+        "trivia": {
+          "question": "The Water Works pumped river water up to reservoirs on the hill where which landmark now stands?",
+          "options": ["City Hall", "The Philadelphia Museum of Art", "Eastern State Penitentiary", "Memorial Hall"],
+          "correctIndex": 1
+        }
+      },
+      {
+        "id": "schuylkill-banks-boardwalk",
+        "name": "Schuylkill Banks Boardwalk",
+        "latitude": 39.9455,
+        "longitude": -75.1802,
+        "radius": 100,
+        "narrationScript": "You're on the Schuylkill Banks Boardwalk, which opened in 2014 and carries the trail out over the water itself, from Locust Street down toward South Street. The river's name comes from early Dutch explorers, and is usually translated as hidden river, since its mouth was easy to miss from the Delaware.",
+        "funFacts": ["'Schuylkill' comes from Dutch and means 'hidden river.' I found it though!", "This boardwalk stretches about 2,000 feet out over the river. I love a good river view!", "Keep an eye on the water. Otters like me are always looking for fish!"],
+        "trivia": {
+          "question": "The name 'Schuylkill' comes from which language?",
+          "options": ["Lenape", "German", "Dutch", "Swedish"],
+          "correctIndex": 2
+        }
+      },
+      {
+        "id": "bartrams-garden",
+        "name": "Bartram's Garden",
+        "latitude": 39.9316,
+        "longitude": -75.2115,
+        "radius": 150,
+        "narrationScript": "Welcome to Bartram's Garden, the oldest surviving botanic garden in North America. John Bartram, a self-taught botanist, started it in 1728 and collected plants from across the colonies, trading seeds with scientists in Europe. Today it's a free public park with a community boathouse where you can paddle out onto the tidal Schuylkill.",
+        "funFacts": ["Bartram's Garden is the oldest surviving botanic garden in North America. Founded in 1728!", "The Franklinia tree vanished from the wild long ago. Every one alive today comes from seeds saved here!", "There's a ginkgo tree here said to be one of the oldest in North America. What a tree-mendous view!"],
+        "trivia": {
+          "question": "Around what year did John Bartram start his garden?",
+          "options": ["1682", "1728", "1776", "1812"],
+          "correctIndex": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "philly-delaware",
+    "city": "Philadelphia",
+    "waterway": "Delaware River",
+    "name": "Delaware Waterfront Walk",
+    "summary": "Stroll the Delaware from the Ben Franklin Bridge to a Spanish-American War cruiser.",
+    "mode": "walk",
+    "stops": [
+      {
+        "id": "race-street-pier",
+        "name": "Race Street Pier",
+        "latitude": 39.9533,
+        "longitude": -75.1398,
+        "radius": 70,
+        "narrationScript": "Welcome to Race Street Pier, a park built on an old shipping pier that reopened to the public in 2011. Look up at the Benjamin Franklin Bridge overhead. When it opened in 1926, its main span was the longest of any suspension bridge in the world, finally giving Philadelphians a way to cross to Camden without a ferry.",
+        "funFacts": ["This park opened in 2011 on top of an old, unused pier. Great glow-up!", "The Ben Franklin Bridge above was the longest suspension bridge in the world when it opened in 1926.", "Look for the river views. Best spot in town for otter-watching, if I do say so myself!"],
+        "trivia": {
+          "question": "When the Ben Franklin Bridge opened in 1926, what record did it hold?",
+          "options": ["Tallest bridge in America", "First steel bridge in the U.S.", "World's longest suspension span", "First toll bridge on the Delaware"],
+          "correctIndex": 2
+        }
+      },
+      {
+        "id": "penns-landing",
+        "name": "Penn's Landing",
+        "latitude": 39.9478,
+        "longitude": -75.1412,
+        "radius": 80,
+        "narrationScript": "This is Penn's Landing, named for William Penn, who arrived in 1682 to found his colony of Pennsylvania. For more than two centuries this riverfront was one of the busiest ports in America, lined with wharves, warehouses, and ships from around the world. Today the docks have given way to festivals, concerts, and open space along the river.",
+        "funFacts": ["Penn's Landing is named for William Penn, who arrived in the Delaware region in 1682.", "River otters once lived all over the Delaware watershed, and they're making a comeback in Pennsylvania!", "The Delaware River was Philly's highway long before there were any cars. Otters loved it even then!"],
+        "trivia": {
+          "question": "In what year did William Penn arrive to found his colony?",
+          "options": ["1609", "1682", "1701", "1776"],
+          "correctIndex": 1
+        }
+      },
+      {
+        "id": "spruce-street-harbor-park",
+        "name": "Spruce Street Harbor Park",
+        "latitude": 39.9446,
+        "longitude": -75.1418,
+        "radius": 60,
+        "narrationScript": "Welcome to Spruce Street Harbor Park, a seasonal park known for its hammocks, floating barges, and glowing lights strung over the marina. Look across the river to Camden, New Jersey. The massive gray ship on the far shore is the Battleship New Jersey, now a museum and the most decorated battleship in U.S. Navy history.",
+        "funFacts": ["This waterfront park glows with colorful lights and cozy hammocks. My kind of hangout!", "Floating gardens, hammocks, and snacks by the water. Otters approve!", "The park pops up on the Delaware every summer. Otter alert: it's a fun place to relax!"],
+        "trivia": {
+          "question": "Which battleship museum can you see across the river in Camden?",
+          "options": ["USS Missouri", "USS Texas", "USS Iowa", "Battleship New Jersey"],
+          "correctIndex": 3
+        }
+      },
+      {
+        "id": "cruiser-olympia",
+        "name": "Cruiser Olympia",
+        "latitude": 39.9416,
+        "longitude": -75.1405,
+        "radius": 60,
+        "narrationScript": "Your last stop is the Cruiser Olympia, docked beside the Independence Seaport Museum. Launched in 1892, she served as Commodore George Dewey's flagship at the Battle of Manila Bay in 1898, and is now the oldest steel warship still afloat in the world. You can step aboard to explore her decks and engine rooms.",
+        "funFacts": ["The Olympia is the oldest steel warship still afloat in the world!", "It was Admiral Dewey's flagship at Manila Bay in 1898. That's a big splash in history!", "It's part of the Independence Seaport Museum. A floating museum, how cool is that?"],
+        "trivia": {
+          "question": "The Olympia was Commodore Dewey's flagship at which battle?",
+          "options": ["Battle of Manila Bay", "Battle of Mobile Bay", "Battle of Midway", "Battle of Santiago de Cuba"],
+          "correctIndex": 0
+        }
+      }
+    ]
+  }
+]
