@@ -1,8 +1,20 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
+
+// Load all API keys and secrets directly from the root .env file
+val envProperties = Properties().apply {
+    val envFile = rootProject.file(".env")
+    if (envFile.exists()) {
+        envFile.inputStream().use { load(it) }
+    }
+}
+val mapsApiKey: String = envProperties.getProperty("MAPS_API_KEY")
+    ?: System.getenv("MAPS_API_KEY")
+    ?: ""
 
 android {
     namespace = "com.owlhacks.phillytour"
@@ -14,6 +26,10 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+
+        // Inject MAPS_API_KEY into AndroidManifest.xml and BuildConfig
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
+        buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -76,11 +92,3 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
-
-secrets {
-    // Read from .env if present in root project, otherwise default to local.properties
-    propertiesFileName = if (rootProject.file(".env").exists()) "../.env" else "local.properties"
-    defaultPropertiesFileName = "secrets.defaults.properties"
-}
-
-
