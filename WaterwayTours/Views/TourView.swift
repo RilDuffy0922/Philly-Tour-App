@@ -11,6 +11,7 @@ struct TourView: View {
     @State private var camera: MapCameraPosition
     @State private var confirmingReset = false
     @State private var lastFix: CLLocation?
+    @State private var visibleRegion: MKCoordinateRegion?
     @Environment(LocationService.self) private var location
     @Environment(Narrator.self) private var narrator
     @Environment(DemoController.self) private var demo
@@ -52,6 +53,9 @@ struct TourView: View {
                 }
             }
         }
+        .onMapCameraChange(frequency: .onEnd) { context in
+            visibleRegion = context.region
+        }
         .demoTarget(.map)
         .mapControls {
             MapUserLocationButton()
@@ -59,6 +63,7 @@ struct TourView: View {
             MapScaleView()
         }
         .overlay(alignment: .top) { banner }
+        .overlay(alignment: .topLeading) { zoomControls }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 10) {
                 if !session.isComplete, let next = session.nextStop {
@@ -138,11 +143,43 @@ struct TourView: View {
         }
     }
 
+    private var zoomControls: some View {
+        VStack(spacing: 0) {
+            Button { zoom(by: 0.5) } label: {
+                Image(systemName: "plus").frame(width: 44, height: 44)
+            }
+            .accessibilityLabel("Zoom in")
+            Divider().frame(width: 28)
+            Button { zoom(by: 2) } label: {
+                Image(systemName: "minus").frame(width: 44, height: 44)
+            }
+            .accessibilityLabel("Zoom out")
+        }
+        .font(.title3.weight(.semibold))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .shadow(radius: 2)
+        .padding(.leading, 12)
+        .padding(.top, 60)
+    }
+
     // MARK: - Actions
+
+    /// Zooms the map in (factor < 1) or out (factor > 1) around what's currently in view.
+    private func zoom(by factor: Double) {
+        guard let region = visibleRegion else { return }
+        let span = MKCoordinateSpan(
+            latitudeDelta: min(max(region.span.latitudeDelta * factor, 0.0005), 60),
+            longitudeDelta: min(max(region.span.longitudeDelta * factor, 0.0005), 60))
+        withAnimation { camera = .region(MKCoordinateRegion(center: region.center, span: span)) }
+    }
 
     private func arrive(at stop: Stop) {
         session.markVisited(stop)
         session.presentedStop = stop
+        // Show the stop itself, not the rider's position.
+        withAnimation {
+            camera = .region(MKCoordinateRegion(center: stop.coordinate, latitudinalMeters: 500, longitudinalMeters: 500))
+        }
         if !isDemo { narrator.speak(stop.narrationScript) }
     }
 
