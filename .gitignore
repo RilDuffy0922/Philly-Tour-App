@@ -1,0 +1,15 @@
+# Environment and secrets
+.env
+local.properties
+
+# Gradle and Android build outputs
+.gradle/
+build/
+app/build/
+*.apk
+*.aab
+
+# IDE files
+.idea/
+*.iml
+.DS_Store
