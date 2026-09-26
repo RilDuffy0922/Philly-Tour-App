@@ -20,6 +20,26 @@ Requirements: Xcode 16+ (iOS 17+ target).
 
 To run on a real iPhone, set your team under *Signing & Capabilities* in Xcode.
 
+## Shipping to TestFlight
+
+One-time setup:
+
+1. **App icon** — export a 1024×1024 PNG (no transparency, no rounded corners — iOS rounds them) and drag it into `Assets.xcassets → AppIcon` in Xcode. Uploads are rejected without one.
+2. **Signing** — target → *Signing & Capabilities* → pick your team, and change the bundle ID (`com.phillytour.WaterwayTours`) to one you own.
+3. **App Store Connect** — create the app at appstoreconnect.apple.com using that bundle ID.
+
+Every build:
+
+1. Bump the build number:
+
+   ```bash
+   agvtool next-version -all
+   ```
+
+2. In Xcode, set the destination to **Any iOS Device (arm64)**, then **Product → Archive → Distribute App → TestFlight & App Store**.
+
+The export-compliance question is pre-answered (`ITSAppUsesNonExemptEncryption = NO`) since the app uses no custom encryption.
+
 ## How it's organized
 
 ```
