@@ -76,3 +76,9 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
+
+secrets {
+    // Default secret properties fallback if missing from local.properties
+    defaultPropertiesFileName = "secrets.defaults.properties"
+}
+
