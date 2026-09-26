@@ -55,7 +55,7 @@ fun OtterGuide(
     var lines by remember(stop.id) { mutableStateOf(dialogue.lines(stop)) }
 
     val messages = remember(isTracking, stop.id, lines) {
-        if (isTracking) listOf("Follow me to ${stop.name}!") + lines
+        if (isTracking) listOf(openingLine(stop)) + lines
         else listOf("Tap Start tour and I'll guide you to ${stop.name}!")
     }
     val message = messages[index % messages.size]
@@ -129,4 +129,18 @@ fun OtterGuide(
             }
         }
     }
+}
+
+/** A few different ways to announce the next stop, picked per-stop so it's not the same line every time. */
+private val OPENING_LINES = listOf(
+    "Let's go check out %s!",
+    "Next up: %s — this way!",
+    "Onward to %s!",
+    "Come on, %s is just ahead!",
+    "This way to %s!",
+)
+
+private fun openingLine(stop: Stop): String {
+    val index = Math.floorMod(stop.id.hashCode(), OPENING_LINES.size)
+    return OPENING_LINES[index].format(stop.name)
 }

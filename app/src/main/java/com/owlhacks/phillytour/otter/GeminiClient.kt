@@ -14,15 +14,20 @@ class GeminiClient(private val apiKey: String, private val model: String) {
 
     class GeminiException(message: String) : Exception(message)
 
-    /** Returns several fresh fun-fact lines about [stop], ready to be read aloud. */
+    /** Returns several fresh lines about [stop] — a mix of history and things to do — ready to be read aloud. */
     suspend fun funFactLines(stop: Stop, count: Int = 4): List<String> = withContext(Dispatchers.IO) {
         var source = "Stop: ${stop.name}\nBackground: ${stop.narrationScript}"
         val facts = stop.funFacts
         if (!facts.isNullOrEmpty()) {
-            source += "\nKnown fun facts:\n" + facts.joinToString("\n") { "- $it" }
+            source += "\nKnown history/fun facts:\n" + facts.joinToString("\n") { "- $it" }
         }
-        val prompt = "$source\n\nWrite $count different fun-fact lines about this stop as the otter, " +
-            "each about a different detail."
+        val activities = stop.thingsToDo
+        if (!activities.isNullOrEmpty()) {
+            source += "\nKnown things to do here:\n" + activities.joinToString("\n") { "- $it" }
+        }
+        val prompt = "$source\n\nWrite $count different lines about this stop as the otter. Mix it up: " +
+            "some lines should share a history or fun fact, and some should suggest a specific thing the " +
+            "rider could do or look for right here. Each line should cover a different detail or suggestion."
 
         val body = JSONObject().apply {
             put("systemInstruction", JSONObject().put("parts", JSONArray().put(JSONObject().put("text", SYSTEM_INSTRUCTION))))
@@ -100,9 +105,10 @@ class GeminiClient(private val apiKey: String, private val model: String) {
         private const val SYSTEM_INSTRUCTION = "You are the cheerful otter mascot of a walking and biking tour " +
             "of Philadelphia's rivers. Speak in first person to the rider, in a warm, light-hearted, playful " +
             "voice. Each line is one or two short sentences, at most 30 words, and works when read aloud. " +
-            "Use at most one otter or water pun across the whole set. Only use facts stated in the source " +
-            "material you are given. Do not mention any place, ship, landmark, person, date, or number that " +
-            "is not in the source material, even if you know it is true. Do not use emoji, hashtags, or " +
-            "stage directions."
+            "Use at most one otter or water pun across the whole set. Give a mix of history/fun facts and " +
+            "concrete suggestions for things to do or look for right at this stop, not just history. Only use " +
+            "facts and suggestions stated in the source material you are given. Do not mention any place, " +
+            "ship, landmark, person, date, or number that is not in the source material, even if you know it " +
+            "is true. Do not use emoji, hashtags, or stage directions."
     }
 }

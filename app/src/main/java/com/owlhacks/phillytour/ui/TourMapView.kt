@@ -8,6 +8,7 @@ import android.graphics.Color as AndroidColor
 import android.graphics.Paint
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,10 +36,13 @@ import com.owlhacks.phillytour.model.Tour
 @Composable
 fun TourMapView(
     tour: Tour,
-    stops: List<Stop>,
     visited: Set<String>,
     skipped: Set<String>,
-    manualLocation: LatLng?,
+    nextStop: Stop?,
+    currentLocation: LatLng?,
+    isManualLocation: Boolean,
+    isTracking: Boolean,
+    isAtStop: Boolean,
     onStopClick: (Stop) -> Unit,
     onMapClick: (LatLng) -> Unit,
     modifier: Modifier = Modifier
@@ -49,7 +53,7 @@ fun TourMapView(
     ) == PackageManager.PERMISSION_GRANTED
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(stops.first().latLng, 14f)
+        position = CameraPosition.fromLatLngZoom(tour.stops.first().latLng, 14f)
     }
 
     val uiSettings = remember {
@@ -57,6 +61,14 @@ fun TourMapView(
     }
     val properties = remember(hasLocationPermission) {
         MapProperties(isMyLocationEnabled = hasLocationPermission)
+    }
+
+    // Follow the rider while the tour is running, zooming in close once they've arrived at a stop.
+    LaunchedEffect(isTracking, currentLocation, isAtStop) {
+        if (isTracking && currentLocation != null) {
+            val zoom = if (isAtStop) 18f else 16f
+            cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(currentLocation, zoom), 600)
+        }
     }
 
     GoogleMap(
@@ -71,14 +83,25 @@ fun TourMapView(
             cameraPositionState.move(CameraUpdateFactory.newLatLngBounds(builder.build(), 140))
         }
     ) {
-        Polyline(
-            points = stops.map { it.latLng },
-            color = Color(0xFF0088A3),
-            width = 8f,
-            pattern = listOf(Dash(30f), Gap(20f))
-        )
+        // Before tracking starts: a preview of the whole route. Once tracking, a live line to the
+        // closest remaining stop, since stops are visited by proximity rather than a fixed order.
+        if (isTracking && currentLocation != null && nextStop != null) {
+            Polyline(
+                points = listOf(currentLocation, nextStop.latLng),
+                color = Color(0xFF0088A3),
+                width = 8f,
+                pattern = listOf(Dash(30f), Gap(20f))
+            )
+        } else {
+            Polyline(
+                points = tour.stops.map { it.latLng },
+                color = Color(0xFF0088A3),
+                width = 8f,
+                pattern = listOf(Dash(30f), Gap(20f))
+            )
+        }
 
-        stops.forEach { stop ->
+        tour.stops.forEach { stop ->
             Circle(
                 center = stop.latLng,
                 radius = stop.radius,
@@ -88,7 +111,7 @@ fun TourMapView(
             )
         }
 
-        stops.forEachIndexed { index, stop ->
+        tour.stops.forEachIndexed { index, stop ->
             val isVisited = stop.id in visited
             val isSkipped = stop.id in skipped
             val icon = rememberNumberedMarkerIcon(number = index + 1, visited = isVisited, skipped = isSkipped)
@@ -103,9 +126,11 @@ fun TourMapView(
             )
         }
 
-        manualLocation?.let { coordinate ->
+        // The real device location already shows as the platform's own blue dot; only draw our own
+        // marker for a manual/demo location, which the blue dot can't represent.
+        if (isManualLocation && currentLocation != null) {
             Marker(
-                state = rememberMarkerState(position = coordinate),
+                state = rememberMarkerState(position = currentLocation),
                 title = "You",
                 icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
             )

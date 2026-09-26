@@ -132,7 +132,7 @@ fun TourScreen(tour: Tour, speaker: TourSpeaker, otterDialogue: OtterDialogue, o
             while (isActive) {
                 val next = session.nextStop ?: break
                 val start = here
-                val steps = 40
+                val steps = 16
                 for (step in 1..steps) {
                     if (!isActive || presentedStop != null) break
                     val t = step / steps.toDouble()
@@ -141,19 +141,19 @@ fun TourScreen(tour: Tour, speaker: TourSpeaker, otterDialogue: OtterDialogue, o
                         start.longitude + (next.longitude - start.longitude) * t
                     )
                     locationTracker.setManual(here)
-                    delay(200)
+                    delay(80)
                 }
                 if (!isActive) break
 
-                delay(1000)
+                delay(400)
                 var waited = 0.0
                 while (speaker.currentText != null && waited < 60 && isActive) {
-                    delay(500)
-                    waited += 0.5
+                    delay(300)
+                    waited += 0.3
                 }
-                delay(2000)
+                delay(600)
                 presentedStop = null
-                delay(1000)
+                delay(300)
             }
             demoJob = null
         }
@@ -161,7 +161,7 @@ fun TourScreen(tour: Tour, speaker: TourSpeaker, otterDialogue: OtterDialogue, o
 
     LaunchedEffect(locationTracker.location) {
         val location = locationTracker.location ?: return@LaunchedEffect
-        if (session.needsOrdering) session.orderStops(location)
+        session.updateLocation(location)
         if (!isTracking) return@LaunchedEffect
         session.stopArrived(location)?.let { arrive(it) }
     }
@@ -231,7 +231,7 @@ fun TourScreen(tour: Tour, speaker: TourSpeaker, otterDialogue: OtterDialogue, o
                             )
                         }
                         DropdownMenu(expanded = showPlaceNearMenu, onDismissRequest = { showPlaceNearMenu = false }) {
-                            session.stops.forEach { stop ->
+                            tour.stops.forEach { stop ->
                                 DropdownMenuItem(
                                     text = { Text(stop.name) },
                                     onClick = { showPlaceNearMenu = false; placeNear(stop) }
@@ -243,13 +243,17 @@ fun TourScreen(tour: Tour, speaker: TourSpeaker, otterDialogue: OtterDialogue, o
             )
         }
     ) { padding ->
+        val currentLatLng = locationTracker.location?.let { LatLng(it.latitude, it.longitude) }
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             TourMapView(
                 tour = tour,
-                stops = session.stops,
                 visited = session.visited,
                 skipped = session.skipped,
-                manualLocation = locationTracker.manualLocation?.let { LatLng(it.latitude, it.longitude) },
+                nextStop = session.nextStop,
+                currentLocation = currentLatLng,
+                isManualLocation = locationTracker.isManual,
+                isTracking = isTracking,
+                isAtStop = presentedStop != null,
                 onStopClick = { presentedStop = it },
                 onMapClick = { latLng ->
                     if (pickingLocation) {
@@ -289,6 +293,7 @@ fun TourScreen(tour: Tour, speaker: TourSpeaker, otterDialogue: OtterDialogue, o
                 }
                 TourStatusPanel(
                     session = session,
+                    totalStops = tour.stops.size,
                     isTracking = isTracking,
                     hasLocationPermission = hasLocationPermission,
                     isManualLocation = locationTracker.isManual,
@@ -374,6 +379,7 @@ private fun TourBanner(
 @Composable
 private fun TourStatusPanel(
     session: TourSession,
+    totalStops: Int,
     isTracking: Boolean,
     hasLocationPermission: Boolean,
     isManualLocation: Boolean,
@@ -394,7 +400,7 @@ private fun TourStatusPanel(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = "${session.visited.size} of ${session.stops.size} stops",
+                        text = "${session.visited.size} of $totalStops stops",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -412,10 +418,10 @@ private fun TourStatusPanel(
                 }
             }
 
-            val progress = if (session.stops.isEmpty()) {
+            val progress = if (totalStops == 0) {
                 0f
             } else {
-                (session.visited.size + session.skipped.size) / session.stops.size.toFloat()
+                (session.visited.size + session.skipped.size) / totalStops.toFloat()
             }
             LinearProgressIndicator(progress = progress, modifier = Modifier.fillMaxWidth())
 

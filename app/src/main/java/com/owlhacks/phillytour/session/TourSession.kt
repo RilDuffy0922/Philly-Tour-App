@@ -10,7 +10,12 @@ import com.owlhacks.phillytour.model.Tour
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** Progress through one tour: which stops were reached and how trivia went. Saved to SharedPreferences. */
+/**
+ * Progress through one tour: which stops were reached and how trivia went. Saved to SharedPreferences.
+ *
+ * The "next" stop is not a fixed sequence — it's always whichever remaining stop is currently closest
+ * to the rider, recalculated live as [updateLocation] is called, so the route adapts as you move.
+ */
 class TourSession(context: Context, val tour: Tour) {
     private val prefs = context.applicationContext.getSharedPreferences("waterway_tours", Context.MODE_PRIVATE)
     private val prefsKey = "progress_${tour.id}"
@@ -25,38 +30,26 @@ class TourSession(context: Context, val tour: Tour) {
     var answers by mutableStateOf<Map<String, Int>>(emptyMap())
         private set
 
-    /** Stops in tour order. Starts as the authored order, then is re-sorted from the rider's position. */
-    var stops by mutableStateOf(tour.stops)
+    /** The rider's last known location (device, manual, or demo), used to pick the closest remaining stop. */
+    var currentLocation by mutableStateOf<Location?>(null)
         private set
-    private var isOrdered = false
 
     init {
         load()
     }
 
-    /** True until the stops have been sorted from the rider's location. */
-    val needsOrdering: Boolean
-        get() = !isOrdered && visited.isEmpty() && skipped.isEmpty()
-
-    /** Makes the stop closest to [location] the first stop, then chains each next-closest stop after it. */
-    fun orderStops(location: Location) {
-        if (!needsOrdering) return
-        val remaining = tour.stops.toMutableList()
-        val ordered = mutableListOf<Stop>()
-        var current = location
-        while (remaining.isNotEmpty()) {
-            val nearest = remaining.minByOrNull { distanceMeters(current, it) } ?: break
-            remaining.remove(nearest)
-            ordered.add(nearest)
-            current = stopLocation(nearest)
-        }
-        stops = ordered
-        isOrdered = true
-        save()
+    fun updateLocation(location: Location) {
+        currentLocation = location
     }
 
+    /** The remaining stop closest to [currentLocation], or the first remaining stop if location isn't known yet. */
     val nextStop: Stop?
-        get() = stops.firstOrNull { it.id !in visited && it.id !in skipped }
+        get() {
+            val remaining = tour.stops.filter { it.id !in visited && it.id !in skipped }
+            if (remaining.isEmpty()) return null
+            val location = currentLocation ?: return remaining.first()
+            return remaining.minByOrNull { distanceMeters(location, it) }
+        }
 
     val isComplete: Boolean
         get() = nextStop == null
@@ -64,12 +57,13 @@ class TourSession(context: Context, val tour: Tour) {
     val correctAnswers: Int
         get() = tour.stops.count { answers[it.id] == it.trivia.correctIndex }
 
-    fun number(of: Stop): Int = stops.indexOf(of) + 1
+    /** The stop's fixed position in the authored tour, for its map pin — unrelated to visiting order. */
+    fun number(of: Stop): Int = tour.stops.indexOf(of) + 1
 
     /** The closest unvisited, unskipped stop whose geofence contains [location], if any. */
     fun stopArrived(location: Location): Stop? {
         if (location.accuracy > maxUsableAccuracy) return null
-        return stops
+        return tour.stops
             .filter { it.id !in visited && it.id !in skipped }
             .map { stop -> stop to distanceMeters(location, stop) }
             .filter { (stop, distance) -> distance <= stop.radius }
@@ -100,8 +94,6 @@ class TourSession(context: Context, val tour: Tour) {
         visited = emptySet()
         skipped = emptySet()
         answers = emptyMap()
-        stops = tour.stops
-        isOrdered = false
         save()
     }
 
@@ -109,11 +101,6 @@ class TourSession(context: Context, val tour: Tour) {
         val result = FloatArray(1)
         Location.distanceBetween(location.latitude, location.longitude, stop.latitude, stop.longitude, result)
         return result[0]
-    }
-
-    private fun stopLocation(stop: Stop): Location = Location("stop").apply {
-        latitude = stop.latitude
-        longitude = stop.longitude
     }
 
     private fun load() {
@@ -131,14 +118,6 @@ class TourSession(context: Context, val tour: Tour) {
                 answersObj.keys().forEach { key -> map[key] = answersObj.getInt(key) }
                 answers = map
             }
-            obj.optJSONArray("order")?.let { orderArray ->
-                val byId = tour.stops.associateBy { it.id }
-                val restored = (0 until orderArray.length()).mapNotNull { byId[orderArray.getString(it)] }
-                if (restored.size == tour.stops.size) {
-                    stops = restored
-                    isOrdered = true
-                }
-            }
         } catch (e: Exception) {
             // Corrupt or missing progress; start fresh.
         }
@@ -151,7 +130,6 @@ class TourSession(context: Context, val tour: Tour) {
         val answersObj = JSONObject()
         answers.forEach { (id, index) -> answersObj.put(id, index) }
         obj.put("answers", answersObj)
-        if (isOrdered) obj.put("order", JSONArray(stops.map { it.id }))
         prefs.edit().putString(prefsKey, obj.toString()).apply()
     }
 }
