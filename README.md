@@ -43,9 +43,9 @@ app/src/main/
     └── ui/
         ├── TourListScreen.kt                  Tours grouped by city
         ├── TourScreen.kt                      Map with route, stops, geofences, and the status panel
-        ├── GoogleMapView.kt                   The Google Map: route line, geofence circles, numbered pins
-        ├── StopDetailSheet.kt                 Narration + trivia bottom sheet for one stop
-        └── TriviaCardView.kt                  The trivia question card
+        ├── TourMapView.kt                     The Google Map: route line, geofence circles, numbered pins
+        ├── StopSheet.kt                       Narration + trivia bottom sheet for one stop
+        └── TriviaCard.kt                      The trivia question card
 ```
 
 ## Adding a city or tour

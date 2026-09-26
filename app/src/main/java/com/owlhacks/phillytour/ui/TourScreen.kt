@@ -159,7 +159,7 @@ fun TourScreen(tour: Tour, speaker: TourSpeaker, onBack: () -> Unit) {
     }
 
     presentedStop?.let { stop ->
-        StopDetailSheet(
+        StopSheet(
             stop = stop,
             session = session,
             speaker = speaker,

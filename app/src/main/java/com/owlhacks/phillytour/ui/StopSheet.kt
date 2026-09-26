@@ -30,7 +30,7 @@ import com.owlhacks.phillytour.speech.TourSpeaker
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StopDetailSheet(
+fun StopSheet(
     stop: Stop,
     session: TourSession,
     speaker: TourSpeaker,
