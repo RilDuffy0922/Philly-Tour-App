@@ -78,7 +78,9 @@ dependencies {
 }
 
 secrets {
-    // Default secret properties fallback if missing from local.properties
+    // Read from .env if present in root project, otherwise default to local.properties
+    propertiesFileName = if (rootProject.file(".env").exists()) "../.env" else "local.properties"
     defaultPropertiesFileName = "secrets.defaults.properties"
 }
+
 
