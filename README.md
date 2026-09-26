@@ -18,15 +18,15 @@ Requirements: Xcode 16+ (iOS 17+ target).
 
    (That's Boathouse Row, stop 1 of the Schuylkill tour.) You can also tap any stop on the map and press **I'm here**.
 
-To run on a real iPhone, set your team under *Signing & Capabilities* in Xcode.
+To run on a real iPhone, plug it in and pick it as the run destination. Signing is preconfigured for team `9YP4VNUU95`; other developers switch the team under *Signing & Capabilities*.
 
 ## Shipping to TestFlight
 
 One-time setup:
 
 1. **App icon** — export a 1024×1024 PNG (no transparency, no rounded corners — iOS rounds them) and drag it into `Assets.xcassets → AppIcon` in Xcode. Uploads are rejected without one.
-2. **Signing** — target → *Signing & Capabilities* → pick your team, and change the bundle ID (`com.phillytour.WaterwayTours`) to one you own.
-3. **App Store Connect** — create the app at appstoreconnect.apple.com using that bundle ID.
+2. **Signing** — already set up: team `9YP4VNUU95`, bundle ID `com.bramillan.waterwaytours`, automatic signing. Xcode must be signed in to that Apple Developer account (Settings → Accounts).
+3. **App Store Connect** — create the app at appstoreconnect.apple.com using bundle ID `com.bramillan.waterwaytours`.
 
 Every build:
 
