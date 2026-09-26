@@ -39,6 +39,8 @@ struct DemoOverlay: View {
     let scope: Scope
 
     @Environment(DemoController.self) private var demo
+    @Environment(Narrator.self) private var narrator
+    @Environment(\.dismiss) private var dismiss
     @State private var pulse = false
 
     var body: some View {
@@ -54,9 +56,10 @@ struct DemoOverlay: View {
                 let bubbleAtTop = midY > size.height * 0.6 || (step.screen == .tour && midY < size.height * 0.2)
 
                 ZStack {
-                    // Blocks the app underneath, and moves the demo along when the otter is done.
+                    // Blocks the app underneath and moves the demo along when tapped — except over the
+                    // highlighted control itself, which stays tappable so the rider can try it for real.
                     Color.black.opacity(0.001)
-                        .contentShape(Rectangle())
+                        .contentShape(holeShape(excluding: target, in: CGRect(origin: .zero, size: size)), eoFill: true)
                         .onTapGesture { demo.tap() }
 
                     if let target {
@@ -96,6 +99,25 @@ struct DemoOverlay: View {
                         .allowsHitTesting(false)
                         .transition(.opacity)
                     }
+
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Button {
+                                demo.end(narrator: narrator)
+                                if scope == .sheet { dismiss() }
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.title2)
+                                    .symbolRenderingMode(.palette)
+                                    .foregroundStyle(.secondary, Color(.systemBackground).opacity(0.9))
+                            }
+                            .accessibilityLabel("Exit demo")
+                        }
+                        .padding(.top, scope == .sheet ? 12 : 50)
+                        .padding(.trailing, 16)
+                        Spacer()
+                    }
                 }
                 .frame(width: size.width, height: size.height)
             }
@@ -105,6 +127,14 @@ struct DemoOverlay: View {
             .onAppear {
                 withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { pulse = true }
             }
+        }
+    }
+
+    /// The tap-to-continue region: `bounds` with `target` cut out, so the highlighted control stays tappable.
+    private func holeShape(excluding target: CGRect?, in bounds: CGRect) -> Path {
+        Path { path in
+            path.addRect(bounds)
+            if let target { path.addRect(target) }
         }
     }
 

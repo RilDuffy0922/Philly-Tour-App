@@ -46,10 +46,14 @@ struct TourView: View {
 
             ForEach(session.stops) { stop in
                 Annotation(stop.name, coordinate: stop.coordinate) {
-                    StopPin(number: session.number(of: stop),
-                            visited: session.visited.contains(stop.id),
-                            skipped: session.skipped.contains(stop.id))
-                        .onTapGesture { session.presentedStop = stop }
+                    Button {
+                        select(stop)
+                    } label: {
+                        StopPin(number: session.number(of: stop),
+                                visited: session.visited.contains(stop.id),
+                                skipped: session.skipped.contains(stop.id))
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -73,7 +77,7 @@ struct TourView: View {
                         // During the demo the walkthrough otter talks instead; this one only shows for its own step.
                         .opacity(demo.isActive && demo.current?.target != .otter ? 0 : 1)
                 }
-                TourStatusPanel(session: session) { openDirections(to: $0) }
+                TourStatusPanel(session: session, onSelectStop: { select($0) }, onDirections: { openDirections(to: $0) })
             }
         }
         .navigationTitle(tour.name)
@@ -175,12 +179,16 @@ struct TourView: View {
 
     private func arrive(at stop: Stop) {
         session.markVisited(stop)
+        select(stop)
+        if !isDemo { narrator.speak(stop.narrationScript) }
+    }
+
+    /// Opens a stop's sheet and zooms the map to it — used when tapping its pin or "Next" in the status panel.
+    private func select(_ stop: Stop) {
         session.presentedStop = stop
-        // Show the stop itself, not the rider's position.
         withAnimation {
             camera = .region(MKCoordinateRegion(center: stop.coordinate, latitudinalMeters: 500, longitudinalMeters: 500))
         }
-        if !isDemo { narrator.speak(stop.narrationScript) }
     }
 
     /// Adds the distance moved since the last good fix, ignoring GPS jumps and teleports.
@@ -298,6 +306,7 @@ private struct StopPin: View {
 
 private struct TourStatusPanel: View {
     let session: TourSession
+    let onSelectStop: (Stop) -> Void
     let onDirections: (Stop) -> Void
     @Environment(LocationService.self) private var location
 
@@ -329,7 +338,7 @@ private struct TourStatusPanel: View {
             } else if let next = session.nextStop {
                 HStack {
                     Button {
-                        session.presentedStop = next
+                        onSelectStop(next)
                     } label: {
                         HStack {
                             Text("Next: **\(next.name)**")
