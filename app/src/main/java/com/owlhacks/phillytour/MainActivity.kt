@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.owlhacks.phillytour.data.TourLibrary
 import com.owlhacks.phillytour.model.Tour
+import com.owlhacks.phillytour.otter.OtterDialogue
 import com.owlhacks.phillytour.speech.TourSpeaker
 import com.owlhacks.phillytour.ui.TourListScreen
 import com.owlhacks.phillytour.ui.TourScreen
@@ -16,10 +17,12 @@ import com.owlhacks.phillytour.ui.theme.PhillyTourTheme
 
 class MainActivity : ComponentActivity() {
     private lateinit var speaker: TourSpeaker
+    private lateinit var otterDialogue: OtterDialogue
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         speaker = TourSpeaker(this)
+        otterDialogue = OtterDialogue(this)
 
         setContent {
             PhillyTourTheme {
@@ -28,9 +31,14 @@ class MainActivity : ComponentActivity() {
                 val tour = selectedTour
 
                 if (tour == null) {
-                    TourListScreen(tours = tours, onTourSelected = { selectedTour = it })
+                    TourListScreen(tours = tours, speaker = speaker, onTourSelected = { selectedTour = it })
                 } else {
-                    TourScreen(tour = tour, speaker = speaker, onBack = { selectedTour = null })
+                    TourScreen(
+                        tour = tour,
+                        speaker = speaker,
+                        otterDialogue = otterDialogue,
+                        onBack = { selectedTour = null }
+                    )
                 }
             }
         }

@@ -19,6 +19,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.Dash
 import com.google.android.gms.maps.model.Gap
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.Circle
 import com.google.maps.android.compose.GoogleMap
@@ -34,8 +35,12 @@ import com.owlhacks.phillytour.model.Tour
 @Composable
 fun TourMapView(
     tour: Tour,
+    stops: List<Stop>,
     visited: Set<String>,
+    skipped: Set<String>,
+    manualLocation: LatLng?,
     onStopClick: (Stop) -> Unit,
+    onMapClick: (LatLng) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -44,7 +49,7 @@ fun TourMapView(
     ) == PackageManager.PERMISSION_GRANTED
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(tour.coordinates.first(), 14f)
+        position = CameraPosition.fromLatLngZoom(stops.first().latLng, 14f)
     }
 
     val uiSettings = remember {
@@ -59,6 +64,7 @@ fun TourMapView(
         cameraPositionState = cameraPositionState,
         uiSettings = uiSettings,
         properties = properties,
+        onMapClick = onMapClick,
         onMapLoaded = {
             val builder = LatLngBounds.Builder()
             tour.coordinates.forEach { builder.include(it) }
@@ -66,13 +72,13 @@ fun TourMapView(
         }
     ) {
         Polyline(
-            points = tour.coordinates,
+            points = stops.map { it.latLng },
             color = Color(0xFF0088A3),
             width = 8f,
             pattern = listOf(Dash(30f), Gap(20f))
         )
 
-        tour.stops.forEach { stop ->
+        stops.forEach { stop ->
             Circle(
                 center = stop.latLng,
                 radius = stop.radius,
@@ -82,9 +88,10 @@ fun TourMapView(
             )
         }
 
-        tour.stops.forEachIndexed { index, stop ->
+        stops.forEachIndexed { index, stop ->
             val isVisited = stop.id in visited
-            val icon = rememberNumberedMarkerIcon(number = index + 1, visited = isVisited)
+            val isSkipped = stop.id in skipped
+            val icon = rememberNumberedMarkerIcon(number = index + 1, visited = isVisited, skipped = isSkipped)
             Marker(
                 state = rememberMarkerState(position = stop.latLng),
                 title = stop.name,
@@ -95,16 +102,28 @@ fun TourMapView(
                 }
             )
         }
+
+        manualLocation?.let { coordinate ->
+            Marker(
+                state = rememberMarkerState(position = coordinate),
+                title = "You",
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
+            )
+        }
     }
 }
 
 @Composable
-private fun rememberNumberedMarkerIcon(number: Int, visited: Boolean): BitmapDescriptor {
-    return remember(number, visited) {
+private fun rememberNumberedMarkerIcon(number: Int, visited: Boolean, skipped: Boolean): BitmapDescriptor {
+    return remember(number, visited, skipped) {
         val size = 96
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        val fillColor = if (visited) AndroidColor.parseColor("#22C55E") else AndroidColor.parseColor("#00A3B8")
+        val fillColor = when {
+            visited -> AndroidColor.parseColor("#22C55E")
+            skipped -> AndroidColor.parseColor("#9CA3AF")
+            else -> AndroidColor.parseColor("#00A3B8")
+        }
 
         val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = fillColor
@@ -125,7 +144,11 @@ private fun rememberNumberedMarkerIcon(number: Int, visited: Boolean): BitmapDes
             textAlign = Paint.Align.CENTER
             isFakeBoldText = true
         }
-        val label = if (visited) "✓" else number.toString()
+        val label = when {
+            visited -> "✓"
+            skipped -> "»"
+            else -> number.toString()
+        }
         val textY = size / 2f - (textPaint.descent() + textPaint.ascent()) / 2f
         canvas.drawText(label, size / 2f, textY, textPaint)
 

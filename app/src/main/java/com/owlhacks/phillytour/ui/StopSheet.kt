@@ -2,6 +2,7 @@ package com.owlhacks.phillytour.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.Stop as StopIcon
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
@@ -81,10 +83,22 @@ fun StopSheet(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Button(onClick = onArrive) {
-                        Icon(Icons.Filled.LocationOn, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("I'm here")
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = onArrive) {
+                            Icon(Icons.Filled.LocationOn, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("I'm here")
+                        }
+                        if (stop.id !in session.skipped) {
+                            OutlinedButton(onClick = {
+                                session.skip(stop)
+                                onDismiss()
+                            }) {
+                                Icon(Icons.Filled.SkipNext, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Skip this stop")
+                            }
+                        }
                     }
                 }
             }

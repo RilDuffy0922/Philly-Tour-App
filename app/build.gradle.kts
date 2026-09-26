@@ -16,6 +16,14 @@ val mapsApiKey: String = envProperties.getProperty("MAPS_API_KEY")
     ?: System.getenv("MAPS_API_KEY")
     ?: ""
 
+// Otter voice (optional): Gemini writes its lines, ElevenLabs reads them aloud. Without keys the app
+// falls back to the written fun facts in tours.json and the on-device voice.
+val geminiApiKey: String = envProperties.getProperty("GEMINI_API_KEY") ?: System.getenv("GEMINI_API_KEY") ?: ""
+val geminiModel: String = envProperties.getProperty("GEMINI_MODEL") ?: "gemini-3.8-flash"
+val elevenLabsApiKey: String = envProperties.getProperty("ELEVEN_LABS_API_KEY") ?: System.getenv("ELEVEN_LABS_API_KEY") ?: ""
+// Default is the ElevenLabs premade voice "Jessica" (playful, bright).
+val elevenLabsVoiceId: String = envProperties.getProperty("ELEVEN_LABS_VOICE_ID") ?: "cgSgspJ2msm6clMCkdW9"
+
 android {
     namespace = "com.owlhacks.phillytour"
     compileSdk = 34
@@ -30,6 +38,10 @@ android {
         // Inject MAPS_API_KEY into AndroidManifest.xml and BuildConfig
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
         buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+        buildConfigField("String", "GEMINI_MODEL", "\"$geminiModel\"")
+        buildConfigField("String", "ELEVEN_LABS_API_KEY", "\"$elevenLabsApiKey\"")
+        buildConfigField("String", "ELEVEN_LABS_VOICE_ID", "\"$elevenLabsVoiceId\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

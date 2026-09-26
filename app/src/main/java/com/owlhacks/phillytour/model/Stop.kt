@@ -9,6 +9,7 @@ data class Stop(
     val longitude: Double,
     val radius: Double, // meters (geofence radius)
     val narrationScript: String,
+    val funFacts: List<String>?,
     val trivia: TriviaQuestion
 ) {
     val latLng: LatLng

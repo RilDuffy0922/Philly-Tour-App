@@ -46,6 +46,8 @@ object TourLibrary {
             val triviaObj = obj.getJSONObject("trivia")
             val optionsArray = triviaObj.getJSONArray("options")
             val options = (0 until optionsArray.length()).map { optionsArray.getString(it) }
+            val funFactsArray = obj.optJSONArray("funFacts")
+            val funFacts = funFactsArray?.let { array -> (0 until array.length()).map { array.getString(it) } }
             stops += Stop(
                 id = obj.getString("id"),
                 name = obj.getString("name"),
@@ -53,6 +55,7 @@ object TourLibrary {
                 longitude = obj.getDouble("longitude"),
                 radius = obj.getDouble("radius"),
                 narrationScript = obj.getString("narrationScript"),
+                funFacts = funFacts,
                 trivia = TriviaQuestion(
                     question = triviaObj.getString("question"),
                     options = options,

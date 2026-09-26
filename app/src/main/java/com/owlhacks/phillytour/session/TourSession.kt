@@ -20,34 +20,58 @@ class TourSession(context: Context, val tour: Tour) {
 
     var visited by mutableStateOf<Set<String>>(emptySet())
         private set
+    var skipped by mutableStateOf<Set<String>>(emptySet())
+        private set
     var answers by mutableStateOf<Map<String, Int>>(emptyMap())
         private set
+
+    /** Stops in tour order. Starts as the authored order, then is re-sorted from the rider's position. */
+    var stops by mutableStateOf(tour.stops)
+        private set
+    private var isOrdered = false
 
     init {
         load()
     }
 
+    /** True until the stops have been sorted from the rider's location. */
+    val needsOrdering: Boolean
+        get() = !isOrdered && visited.isEmpty() && skipped.isEmpty()
+
+    /** Makes the stop closest to [location] the first stop, then chains each next-closest stop after it. */
+    fun orderStops(location: Location) {
+        if (!needsOrdering) return
+        val remaining = tour.stops.toMutableList()
+        val ordered = mutableListOf<Stop>()
+        var current = location
+        while (remaining.isNotEmpty()) {
+            val nearest = remaining.minByOrNull { distanceMeters(current, it) } ?: break
+            remaining.remove(nearest)
+            ordered.add(nearest)
+            current = stopLocation(nearest)
+        }
+        stops = ordered
+        isOrdered = true
+        save()
+    }
+
     val nextStop: Stop?
-        get() = tour.stops.firstOrNull { it.id !in visited }
+        get() = stops.firstOrNull { it.id !in visited && it.id !in skipped }
 
     val isComplete: Boolean
-        get() = visited.size == tour.stops.size
+        get() = nextStop == null
 
     val correctAnswers: Int
         get() = tour.stops.count { answers[it.id] == it.trivia.correctIndex }
 
-    fun number(of: Stop): Int = tour.stops.indexOf(of) + 1
+    fun number(of: Stop): Int = stops.indexOf(of) + 1
 
-    /** The closest unvisited stop whose geofence contains [location], if any. */
+    /** The closest unvisited, unskipped stop whose geofence contains [location], if any. */
     fun stopArrived(location: Location): Stop? {
         if (location.accuracy > maxUsableAccuracy) return null
-        return tour.stops
-            .filter { it.id !in visited }
-            .map { stop ->
-                val result = FloatArray(1)
-                Location.distanceBetween(location.latitude, location.longitude, stop.latitude, stop.longitude, result)
-                stop to result[0]
-            }
+        return stops
+            .filter { it.id !in visited && it.id !in skipped }
+            .map { stop -> stop to distanceMeters(location, stop) }
             .filter { (stop, distance) -> distance <= stop.radius }
             .minByOrNull { (_, distance) -> distance }
             ?.first
@@ -55,6 +79,14 @@ class TourSession(context: Context, val tour: Tour) {
 
     fun markVisited(stop: Stop) {
         visited = visited + stop.id
+        skipped = skipped - stop.id
+        save()
+    }
+
+    /** Drops a stop the rider isn't interested in; it no longer counts as "next" or triggers on arrival. */
+    fun skip(stop: Stop) {
+        if (stop.id in visited) return
+        skipped = skipped + stop.id
         save()
     }
 
@@ -66,20 +98,47 @@ class TourSession(context: Context, val tour: Tour) {
 
     fun reset() {
         visited = emptySet()
+        skipped = emptySet()
         answers = emptyMap()
+        stops = tour.stops
+        isOrdered = false
         save()
+    }
+
+    private fun distanceMeters(location: Location, stop: Stop): Float {
+        val result = FloatArray(1)
+        Location.distanceBetween(location.latitude, location.longitude, stop.latitude, stop.longitude, result)
+        return result[0]
+    }
+
+    private fun stopLocation(stop: Stop): Location = Location("stop").apply {
+        latitude = stop.latitude
+        longitude = stop.longitude
     }
 
     private fun load() {
         val raw = prefs.getString(prefsKey, null) ?: return
         try {
             val obj = JSONObject(raw)
-            val visitedArray = obj.getJSONArray("visited")
-            visited = (0 until visitedArray.length()).map { visitedArray.getString(it) }.toSet()
-            val answersObj = obj.getJSONObject("answers")
-            val answersMap = mutableMapOf<String, Int>()
-            answersObj.keys().forEach { key -> answersMap[key] = answersObj.getInt(key) }
-            answers = answersMap
+            obj.optJSONArray("visited")?.let { array ->
+                visited = (0 until array.length()).map { array.getString(it) }.toSet()
+            }
+            obj.optJSONArray("skipped")?.let { array ->
+                skipped = (0 until array.length()).map { array.getString(it) }.toSet()
+            }
+            obj.optJSONObject("answers")?.let { answersObj ->
+                val map = mutableMapOf<String, Int>()
+                answersObj.keys().forEach { key -> map[key] = answersObj.getInt(key) }
+                answers = map
+            }
+            obj.optJSONArray("order")?.let { orderArray ->
+                val byId = tour.stops.associateBy { it.id }
+                val restored = (0 until orderArray.length()).mapNotNull { byId[orderArray.getString(it)] }
+                if (restored.size == tour.stops.size) {
+                    stops = restored
+                    isOrdered = true
+                }
+            }
         } catch (e: Exception) {
             // Corrupt or missing progress; start fresh.
         }
@@ -88,9 +147,11 @@ class TourSession(context: Context, val tour: Tour) {
     private fun save() {
         val obj = JSONObject()
         obj.put("visited", JSONArray(visited.toList()))
+        obj.put("skipped", JSONArray(skipped.toList()))
         val answersObj = JSONObject()
         answers.forEach { (id, index) -> answersObj.put(id, index) }
         obj.put("answers", answersObj)
+        if (isOrdered) obj.put("order", JSONArray(stops.map { it.id }))
         prefs.edit().putString(prefsKey, obj.toString()).apply()
     }
 }
