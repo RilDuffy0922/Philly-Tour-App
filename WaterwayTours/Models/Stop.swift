@@ -16,6 +16,7 @@ struct Stop: Identifiable, Codable, Hashable {
     let longitude: Double
     let radius: CLLocationDistance // meters
     let narrationScript: String
+    let funFacts: [String]?
     let trivia: TriviaQuestion
 
     var coordinate: CLLocationCoordinate2D {

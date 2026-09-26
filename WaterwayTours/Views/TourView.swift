@@ -20,15 +20,15 @@ struct TourView: View {
         Map(position: $camera) {
             UserAnnotation()
 
-            MapPolyline(coordinates: tour.coordinates)
+            MapPolyline(coordinates: session.stops.map(\.coordinate))
                 .stroke(.tint.opacity(0.7), style: StrokeStyle(lineWidth: 4, lineCap: .round, dash: [8, 6]))
 
-            ForEach(tour.stops) { stop in
+            ForEach(session.stops) { stop in
                 MapCircle(center: stop.coordinate, radius: stop.radius)
                     .foregroundStyle(.teal.opacity(0.12))
             }
 
-            ForEach(tour.stops) { stop in
+            ForEach(session.stops) { stop in
                 Annotation(stop.name, coordinate: stop.coordinate) {
                     StopPin(number: session.number(of: stop), visited: session.visited.contains(stop.id))
                         .onTapGesture { session.presentedStop = stop }
@@ -41,7 +41,13 @@ struct TourView: View {
             MapScaleView()
         }
         .safeAreaInset(edge: .bottom) {
-            TourStatusPanel(session: session)
+            VStack(spacing: 10) {
+                if !session.isComplete, let next = session.nextStop {
+                    OtterGuide(stop: next, isTracking: location.isTracking, isPaused: session.presentedStop != nil)
+                        .padding(.horizontal)
+                }
+                TourStatusPanel(session: session)
+            }
         }
         .navigationTitle(tour.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -61,6 +67,7 @@ struct TourView: View {
             StopSheet(stop: stop, session: session) { arrive(at: stop) }
         }
         .onChange(of: location.location) { _, newLocation in
+            if let newLocation, session.needsOrdering { session.orderStops(from: newLocation) }
             guard location.isTracking, let newLocation, let stop = session.stopArrived(at: newLocation) else { return }
             arrive(at: stop)
         }
@@ -107,7 +114,7 @@ private struct TourStatusPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("\(session.visited.count) of \(session.tour.stops.count) stops")
+                Text("\(session.visited.count) of \(session.stops.count) stops")
                     .font(.headline)
                 Spacer()
                 Label("\(session.correctAnswers)/\(session.answers.count)", systemImage: "questionmark.bubble")
@@ -115,10 +122,10 @@ private struct TourStatusPanel: View {
                     .foregroundStyle(.secondary)
                     .accessibilityLabel("Trivia: \(session.correctAnswers) correct of \(session.answers.count) answered")
             }
-            ProgressView(value: Double(session.visited.count), total: Double(session.tour.stops.count))
+            ProgressView(value: Double(session.visited.count), total: Double(session.stops.count))
 
             if session.isComplete {
-                Text("Tour complete! You got \(session.correctAnswers) of \(session.tour.stops.count) trivia questions right.")
+                Text("Tour complete! You got \(session.correctAnswers) of \(session.stops.count) trivia questions right.")
                     .font(.subheadline)
             } else if let next = session.nextStop {
                 Button {

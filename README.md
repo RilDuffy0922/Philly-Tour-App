@@ -2,7 +2,7 @@
 
 An iOS app for self-guided tours along a city's waterways. Pick a tour, hit **Start tour**, and as you walk, bike, or paddle past each stop the app detects you've arrived (GPS geofence), reads the stop's story aloud, and unlocks a trivia question.
 
-Ships with two Philadelphia tours (Schuylkill Banks, Delaware Waterfront) and a Chicago Riverwalk tour to show it works for any city.
+Ships with two Philadelphia tours (Schuylkill Banks, Delaware Waterfront). When a tour starts, the stop closest to you becomes stop 1.
 
 ## Running it
 
@@ -104,3 +104,15 @@ Just edit `WaterwayTours/Resources/tours.json` — no code changes. Add an entry
 - **Photos** per stop, historical "then vs. now" images.
 - **Remote tour content** (fetch `tours.json` from a server so tours update without an app release).
 - **Boat-specific features**: tide/current info, launch points, kayak rental locations.
+
+## Otter voice (Gemini + ElevenLabs)
+
+The otter mascot's lines are written by the Gemini API and read aloud with an ElevenLabs voice. Both are optional. Without keys the app uses the written fun facts in `tours.json` and the on-device voice.
+
+1. Copy `Secrets.example.plist` to `WaterwayTours/Resources/Secrets.plist` (it is git-ignored).
+2. Fill in `GeminiAPIKey` and `ElevenLabsAPIKey`. Change `ElevenLabsVoiceID` to pick a different voice.
+3. Build and run.
+
+Generated lines are saved on the device and audio is cached, so each line is only generated once.
+
+**Before shipping:** keys bundled in an app can be extracted. For a public release, route these calls through your own backend and keep the keys there.

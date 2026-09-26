@@ -67,4 +67,5 @@ private struct TourRow: View {
     TourListView(tours: TourLibrary.load())
         .environment(LocationService())
         .environment(Narrator())
+        .environment(OtterDialogue())
 }
