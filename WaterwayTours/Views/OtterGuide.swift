@@ -66,6 +66,7 @@ struct OtterGuide: View {
                 }
                 .accessibilityLabel("Otter says: \(message)")
         }
+        .demoTarget(.otter)
         .contentShape(Rectangle())
         .onTapGesture { advance(); restart += 1 }
         .onChange(of: stop.id) { index = 0 }
@@ -108,7 +109,7 @@ struct OtterGuide: View {
 }
 
 /// A rounded rectangle with a small tail on the left pointing at the otter.
-private struct SpeechBubble: Shape {
+struct SpeechBubble: Shape {
     func path(in rect: CGRect) -> Path {
         let tail: CGFloat = 8
         let body = CGRect(x: rect.minX + tail, y: rect.minY, width: rect.width - tail, height: rect.height)
@@ -129,6 +130,7 @@ private struct SpeechBubble: Shape {
             OtterGuide(stop: stop, isTracking: false, isPaused: false)
         }
         .padding()
+        .environment(DemoController())
         .environment(Narrator())
         .environment(OtterDialogue())
     }

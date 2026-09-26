@@ -6,6 +6,9 @@ struct TourListView: View {
     @AppStorage("hasSeenTutorial") private var hasSeenTutorial = false
     @State private var showingTutorial = false
     @State private var showingSettings = false
+    @State private var path: [Tour] = []
+    @Environment(DemoController.self) private var demo
+    @Environment(Narrator.self) private var narrator
 
     /// Cities in the order they first appear in tours.json.
     private var toursByCity: [(city: String, tours: [Tour])] {
@@ -15,14 +18,36 @@ struct TourListView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        @Bindable var demo = demo
+
+        NavigationStack(path: $path) {
             List {
+                Section {
+                    Button {
+                        demo.showConfirm = true
+                    } label: {
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Play demo").font(.headline)
+                                Text("A guided walkthrough of every feature")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } icon: {
+                            Image(systemName: "play.circle.fill")
+                                .font(.title2)
+                        }
+                    }
+                    .demoTarget(.playDemo)
+                }
+
                 ForEach(toursByCity, id: \.city) { group in
                     Section(group.city) {
                         ForEach(group.tours) { tour in
                             NavigationLink(value: tour) {
                                 TourRow(tour: tour)
                             }
+                            .demoTarget(tour.id == tours.first?.id ? .tourList : nil)
                         }
                     }
                 }
@@ -31,9 +56,11 @@ struct TourListView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("How it works", systemImage: "questionmark.circle") { showingTutorial = true }
+                        .demoTarget(.helpButton)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Settings", systemImage: "gearshape") { showingSettings = true }
+                        .demoTarget(.settingsButton)
                 }
             }
             .sheet(isPresented: $showingTutorial, onDismiss: { hasSeenTutorial = true }) {
@@ -46,7 +73,26 @@ struct TourListView: View {
                 if !hasSeenTutorial { showingTutorial = true }
             }
             .navigationDestination(for: Tour.self) { tour in
-                TourView(tour: tour)
+                TourView(tour: tour, isDemo: demo.isActive)
+            }
+            .onChange(of: demo.screen) { _, screen in
+                // The demo opens the first tour and later brings us back to this page.
+                if screen == .list {
+                    path = []
+                } else if path.isEmpty, let first = tours.first {
+                    path = [first]
+                }
+            }
+            .alert("Enter demo mode?", isPresented: $demo.showConfirm) {
+                Button("Yes") { demo.begin(narrator: narrator) }
+                Button("No", role: .cancel) {}
+            } message: {
+                Text("The app will go into demo mode, and the otter will walk you through every feature. Your real progress won't be changed. Do you wish to continue?")
+            }
+            .alert("Demo finished", isPresented: $demo.showFinished) {
+                Button("OK") { demo.end(narrator: narrator) }
+            } message: {
+                Text("You've seen everything the app can do. Pick a tour to get started!")
             }
             .overlay {
                 if tours.isEmpty {
@@ -89,4 +135,5 @@ private struct TourRow: View {
         .environment(LocationService())
         .environment(Narrator())
         .environment(OtterDialogue())
+        .environment(DemoController())
 }

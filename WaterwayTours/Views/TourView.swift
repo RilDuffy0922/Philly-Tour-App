@@ -4,60 +4,55 @@ import SwiftUI
 
 struct TourView: View {
     let tour: Tour
+    /// True while the guided demo is running: progress isn't saved and the demo drives the screen.
+    let isDemo: Bool
 
     @State private var session: TourSession
     @State private var camera: MapCameraPosition
     @State private var confirmingReset = false
-    @State private var pickingLocation = false
-    @State private var demoTask: Task<Void, Never>?
+    @State private var lastFix: CLLocation?
     @Environment(LocationService.self) private var location
     @Environment(Narrator.self) private var narrator
+    @Environment(DemoController.self) private var demo
 
-    init(tour: Tour) {
+    init(tour: Tour, isDemo: Bool = false) {
         self.tour = tour
-        _session = State(initialValue: TourSession(tour: tour))
+        self.isDemo = isDemo
+        _session = State(initialValue: TourSession(tour: tour, persistent: !isDemo))
         _camera = State(initialValue: .rect(tour.mapRect))
     }
 
-    private var isDemoRunning: Bool { demoTask != nil }
-
     var body: some View {
-        MapReader { proxy in
-            Map(position: $camera) {
-                UserAnnotation()
+        Map(position: $camera) {
+            UserAnnotation()
 
-                if let manual = location.manualLocation {
-                    Annotation("You", coordinate: manual.coordinate) {
-                        Image(systemName: "figure.walk.circle.fill")
-                            .font(.system(size: 30))
-                            .foregroundStyle(.white, .orange)
-                            .shadow(radius: 2)
-                    }
-                }
-
-                MapPolyline(coordinates: session.stops.map(\.coordinate))
-                    .stroke(.tint.opacity(0.7), style: StrokeStyle(lineWidth: 4, lineCap: .round, dash: [8, 6]))
-
-                ForEach(session.stops) { stop in
-                    MapCircle(center: stop.coordinate, radius: stop.radius)
-                        .foregroundStyle(.teal.opacity(0.12))
-                }
-
-                ForEach(session.stops) { stop in
-                    Annotation(stop.name, coordinate: stop.coordinate) {
-                        StopPin(number: session.number(of: stop),
-                                visited: session.visited.contains(stop.id),
-                                skipped: session.skipped.contains(stop.id))
-                            .onTapGesture { session.presentedStop = stop }
-                    }
+            if let manual = location.manualLocation {
+                Annotation("You", coordinate: manual.coordinate) {
+                    Image(systemName: "figure.walk.circle.fill")
+                        .font(.system(size: 30))
+                        .foregroundStyle(.white, .orange)
+                        .shadow(radius: 2)
                 }
             }
-            .onTapGesture { point in
-                guard pickingLocation, let coordinate = proxy.convert(point, from: .local) else { return }
-                pickingLocation = false
-                location.setManual(coordinate)
+
+            MapPolyline(coordinates: session.stops.map(\.coordinate))
+                .stroke(.tint.opacity(0.7), style: StrokeStyle(lineWidth: 4, lineCap: .round, dash: [8, 6]))
+
+            ForEach(session.stops) { stop in
+                MapCircle(center: stop.coordinate, radius: stop.radius)
+                    .foregroundStyle(.teal.opacity(0.12))
+            }
+
+            ForEach(session.stops) { stop in
+                Annotation(stop.name, coordinate: stop.coordinate) {
+                    StopPin(number: session.number(of: stop),
+                            visited: session.visited.contains(stop.id),
+                            skipped: session.skipped.contains(stop.id))
+                        .onTapGesture { session.presentedStop = stop }
+                }
             }
         }
+        .demoTarget(.map)
         .mapControls {
             MapUserLocationButton()
             MapCompass()
@@ -67,10 +62,13 @@ struct TourView: View {
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 10) {
                 if !session.isComplete, let next = session.nextStop {
-                    OtterGuide(stop: next, isTracking: location.isTracking, isPaused: session.presentedStop != nil)
+                    OtterGuide(stop: next, isTracking: location.isTracking,
+                               isPaused: session.presentedStop != nil || demo.isActive)
                         .padding(.horizontal)
+                        // During the demo the walkthrough otter talks instead; this one only shows for its own step.
+                        .opacity(demo.isActive && demo.current?.target != .otter ? 0 : 1)
                 }
-                TourStatusPanel(session: session)
+                TourStatusPanel(session: session) { openDirections(to: $0) }
             }
         }
         .navigationTitle(tour.name)
@@ -83,12 +81,17 @@ struct TourView: View {
             StopSheet(stop: stop, session: session) { arrive(at: stop) }
         }
         .onChange(of: location.location) { _, newLocation in
+            trackTravel(to: newLocation)
             if let newLocation, session.needsOrdering { session.orderStops(from: newLocation) }
             guard location.isTracking, let newLocation, let stop = session.stopArrived(at: newLocation) else { return }
             arrive(at: stop)
         }
+        .onChange(of: location.isTracking) { lastFix = nil }
+        .onAppear {
+            if isDemo { demo.actionHandler = { await performDemo($0) } }
+        }
         .onDisappear {
-            stopDemo()
+            demo.actionHandler = nil
             location.stop()
             location.clearManual()
             narrator.stop()
@@ -99,18 +102,7 @@ struct TourView: View {
 
     private var toolbarMenu: some View {
         Menu {
-            Section("Try it out") {
-                if isDemoRunning {
-                    Button("Stop demo", systemImage: "stop.circle", action: stopDemo)
-                } else {
-                    Button("Run a demo", systemImage: "play.circle", action: startDemo)
-                }
-            }
             Section("Location") {
-                Button("Tap the map to set my location", systemImage: "hand.tap") {
-                    stopDemo()
-                    pickingLocation = true
-                }
                 Menu("Place me near a stop", systemImage: "mappin.and.ellipse") {
                     ForEach(session.stops) { stop in
                         Button(stop.name) { placeNear(stop) }
@@ -118,7 +110,7 @@ struct TourView: View {
                 }
                 if location.isManual {
                     Button("Use my real location", systemImage: "location") {
-                        stopDemo()
+                        lastFix = nil
                         location.clearManual()
                     }
                 }
@@ -130,17 +122,19 @@ struct TourView: View {
             }
         } label: {
             Image(systemName: "ellipsis.circle")
+                .demoTarget(.menuButton)
         }
     }
 
     @ViewBuilder
     private var banner: some View {
-        if pickingLocation {
-            BannerView(text: "Tap the map to set where you are", buttonTitle: "Cancel") { pickingLocation = false }
-        } else if isDemoRunning {
-            BannerView(text: "Demo running", buttonTitle: "Stop", action: stopDemo)
+        if isDemo {
+            BannerView(text: "Demo mode", buttonTitle: nil, action: {})
         } else if location.isManual {
-            BannerView(text: "Using a location you set", buttonTitle: "Use real") { location.clearManual() }
+            BannerView(text: "Using a location you set", buttonTitle: "Use real") {
+                lastFix = nil
+                location.clearManual()
+            }
         }
     }
 
@@ -149,88 +143,86 @@ struct TourView: View {
     private func arrive(at stop: Stop) {
         session.markVisited(stop)
         session.presentedStop = stop
-        narrator.speak(stop.narrationScript)
+        if !isDemo { narrator.speak(stop.narrationScript) }
+    }
+
+    /// Adds the distance moved since the last good fix, ignoring GPS jumps and teleports.
+    private func trackTravel(to newLocation: CLLocation?) {
+        guard location.isTracking, let newLocation, newLocation.horizontalAccuracy >= 0, newLocation.horizontalAccuracy <= 50 else { return }
+        if let lastFix {
+            let moved = newLocation.distance(from: lastFix)
+            if moved >= 3 && moved <= 300 { session.addTravel(moved) }
+        }
+        lastFix = newLocation
     }
 
     /// Puts the rider about 200 m south of `stop`, so the tour can be walked from there.
     private func placeNear(_ stop: Stop) {
-        stopDemo()
+        lastFix = nil
         let coordinate = CLLocationCoordinate2D(latitude: stop.latitude - 0.0018, longitude: stop.longitude)
         location.setManual(coordinate)
         camera = .region(MKCoordinateRegion(center: stop.coordinate, latitudinalMeters: 1200, longitudinalMeters: 1200))
     }
 
-    // MARK: - Demo
-
-    private func startDemo() {
-        stopDemo()
-        narrator.stop()
-        session.reset()
-        demoTask = Task { await runDemo() }
+    /// Opens Apple Maps with directions from wherever the rider is to `stop`.
+    private func openDirections(to stop: Stop) {
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: stop.coordinate))
+        item.name = stop.name
+        let mode = tour.mode == .bike ? MKLaunchOptionsDirectionsModeCycling : MKLaunchOptionsDirectionsModeWalking
+        item.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: mode])
     }
 
-    private func stopDemo() {
-        guard demoTask != nil else { return }
-        demoTask?.cancel()
-        demoTask = nil
-        narrator.stop()
+    // MARK: - Guided demo
+
+    private func performDemo(_ action: DemoAction) async {
+        switch action {
+        case .walkToFirstStop:
+            await walkToFirstStop()
+        case .closeSheet:
+            session.presentedStop = nil
+            try? await Task.sleep(for: .seconds(0.6))
+        }
     }
 
-    /// Walks a pretend rider from stop to stop so the whole tour plays out without leaving the couch.
-    private func runDemo() async {
+    /// Walks a pretend rider from a little way off to the first stop, so the arrival plays out for real.
+    private func walkToFirstStop() async {
         let first = tour.stops[0]
         var here = CLLocationCoordinate2D(latitude: first.latitude - 0.003, longitude: first.longitude - 0.002)
         camera = .rect(tour.mapRect)
+        lastFix = nil
         location.setManual(here)
-        await pause(2.5)
+        try? await Task.sleep(for: .seconds(1.5))
 
-        while !Task.isCancelled, let next = session.nextStop {
-            let start = here
-            let steps = 40
-            for step in 1...steps {
-                if Task.isCancelled || session.presentedStop != nil { break }
-                let t = Double(step) / Double(steps)
-                here = CLLocationCoordinate2D(
-                    latitude: start.latitude + (next.latitude - start.latitude) * t,
-                    longitude: start.longitude + (next.longitude - start.longitude) * t)
-                location.setManual(here)
-                await pause(0.2)
-            }
-            guard !Task.isCancelled else { break }
-
-            // Arrival opens the stop sheet and starts the narration; let it finish, then move on.
-            await pause(1)
-            var waited = 0.0
-            while narrator.currentText != nil, waited < 60, !Task.isCancelled {
-                await pause(0.5)
-                waited += 0.5
-            }
-            await pause(2)
-            session.presentedStop = nil
-            await pause(1)
+        guard let target = session.nextStop else { return }
+        let start = here
+        let steps = 40
+        for step in 1...steps {
+            if Task.isCancelled || session.presentedStop != nil { break }
+            let t = Double(step) / Double(steps)
+            here = CLLocationCoordinate2D(
+                latitude: start.latitude + (target.latitude - start.latitude) * t,
+                longitude: start.longitude + (target.longitude - start.longitude) * t)
+            location.setManual(here)
+            try? await Task.sleep(for: .seconds(0.2))
         }
-
-        guard !Task.isCancelled else { return }
-        demoTask = nil
-    }
-
-    private func pause(_ seconds: Double) async {
-        try? await Task.sleep(for: .seconds(seconds))
+        try? await Task.sleep(for: .seconds(1))
     }
 }
 
 private struct BannerView: View {
     let text: String
-    let buttonTitle: String
+    let buttonTitle: String?
     let action: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
             Text(text).font(.subheadline.weight(.medium))
-            Button(buttonTitle, action: action)
-                .font(.subheadline.weight(.semibold))
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+            if let buttonTitle {
+                Button(buttonTitle, action: action)
+                    .font(.subheadline.weight(.semibold))
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
@@ -269,6 +261,7 @@ private struct StopPin: View {
 
 private struct TourStatusPanel: View {
     let session: TourSession
+    let onDirections: (Stop) -> Void
     @Environment(LocationService.self) private var location
 
     var body: some View {
@@ -282,12 +275,16 @@ private struct TourStatusPanel: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Label("\(session.correctAnswers)/\(session.answers.count)", systemImage: "questionmark.bubble")
+                Text("Trivia \(session.correctAnswers)/\(session.answers.count)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .accessibilityLabel("Trivia: \(session.correctAnswers) correct of \(session.answers.count) answered")
             }
+            .demoTarget(.stopsProgress)
+
             ProgressView(value: Double(session.visited.count + session.skipped.count), total: Double(session.stops.count))
+
+            estimateRow
 
             if session.isComplete {
                 Text("Tour complete! You got \(session.correctAnswers) of \(session.answers.count) trivia questions right.")
@@ -317,27 +314,71 @@ private struct TourStatusPanel: View {
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .accessibilityLabel("Skip \(next.name)")
+                    .demoTarget(.skip)
                 }
             }
 
-            if location.isDenied && !location.isManual {
-                Text("Location is off, so stops won't start automatically. Tap a stop on the map to play it, set a location from the ••• menu, or enable location in Settings.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else if !session.isComplete {
-                Button {
-                    location.isTracking ? location.stop() : location.start()
-                } label: {
-                    Label(location.isTracking ? "Pause tour" : "Start tour",
-                          systemImage: location.isTracking ? "pause.fill" : "location.fill")
-                        .frame(maxWidth: .infinity)
+            if !session.isComplete, let next = session.nextStop {
+                HStack(spacing: 10) {
+                    Button {
+                        onDirections(next)
+                    } label: {
+                        Label("Directions", systemImage: "arrow.triangle.turn.up.right.diamond.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                    .accessibilityLabel("Directions to \(next.name)")
+                    .demoTarget(.directions)
+
+                    if location.isDenied && !location.isManual {
+                        Text("Location is off. Turn it on in Settings so stops start automatically.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Button {
+                            location.isTracking ? location.stop() : location.start()
+                        } label: {
+                            Label(location.isTracking ? "Pause tour" : "Start tour",
+                                  systemImage: location.isTracking ? "pause.fill" : "location.fill")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .demoTarget(.startTour)
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
             }
         }
         .padding()
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
         .padding(.horizontal)
+    }
+
+    /// Time left and finish time (like an arrival estimate), and miles traveled so far.
+    private var estimateRow: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Group {
+                if let estimate = session.estimate(from: location.location) {
+                    TimelineView(.periodic(from: .now, by: 30)) { context in
+                        let finish = context.date.addingTimeInterval(estimate.seconds)
+                        Label("\(Duration.seconds(estimate.seconds).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated, maximumUnitCount: 2))) left · done \(finish.formatted(date: .omitted, time: .shortened))",
+                              systemImage: "clock")
+                    }
+                } else {
+                    Label("All done", systemImage: "checkmark.circle")
+                }
+            }
+            .font(.subheadline)
+            .demoTarget(.eta)
+
+            Spacer()
+
+            Label("\(Measurement(value: session.traveledMeters, unit: UnitLength.meters).formatted(.measurement(width: .abbreviated, usage: .road))) traveled",
+                  systemImage: "figure.walk.motion")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .demoTarget(.traveled)
+        }
     }
 }

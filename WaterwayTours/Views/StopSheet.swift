@@ -6,6 +6,7 @@ struct StopSheet: View {
     let onArrive: () -> Void
 
     @Environment(Narrator.self) private var narrator
+    @Environment(DemoController.self) private var demo
     @Environment(\.dismiss) private var dismiss
 
     private var isVisited: Bool { session.visited.contains(stop.id) }
@@ -16,6 +17,7 @@ struct StopSheet: View {
                 VStack(alignment: .leading, spacing: 20) {
                     Text(stop.narrationScript)
                         .font(.body)
+                        .demoTarget(.story)
 
                     let isPlaying = narrator.isSpeaking(stop.narrationScript)
                     Button {
@@ -25,6 +27,7 @@ struct StopSheet: View {
                               systemImage: isPlaying ? "stop.fill" : "speaker.wave.2.fill")
                     }
                     .buttonStyle(.bordered)
+                    .demoTarget(.narrationButton)
 
                     Divider()
 
@@ -32,6 +35,7 @@ struct StopSheet: View {
                         TriviaCard(trivia: stop.trivia, selected: session.answers[stop.id]) { index in
                             session.answer(index, for: stop)
                         }
+                        .demoTarget(.trivia)
                     } else {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Narration starts automatically when you're within \(Int(stop.radius)) m of this stop. Trivia unlocks when you arrive.")
@@ -59,7 +63,8 @@ struct StopSheet: View {
                 Button("Done") { dismiss() }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents(demo.isActive ? [.large] : [.medium, .large])
+        .overlay { DemoOverlay(scope: .sheet) }
     }
 }
 
