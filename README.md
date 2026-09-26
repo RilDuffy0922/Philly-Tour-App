@@ -39,11 +39,12 @@ This project is now fully converted to **Native Android (Kotlin + Jetpack Compos
    - Android Studio will automatically sync the Gradle project.
 
 2. **Add Your Google Maps API Key**:
-   - Open or create `local.properties` in the root folder:
+   - Open or create `.env` in the root folder (see [`.env.example`](file:///c:/Users/jhona/Desktop/Coding%20Projects/Owlhacks/Philly%20Tour%20App/.env.example)):
      ```properties
      MAPS_API_KEY=AIzaSyYourActualGoogleMapsApiKeyHere
      ```
    - Make sure **Maps SDK for Android** is enabled in your [Google Cloud Console](https://console.cloud.google.com/google/maps-apis/).
+   - *(Note: `.env` is git-ignored and safe for storing secrets).*
 
 3. **Run the App**:
    - Click the green **Run (▶)** button in Android Studio to launch on an Android Emulator or connected physical Android device.

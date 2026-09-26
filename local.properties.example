@@ -1,6 +1,0 @@
-## Example local.properties
-## Copy this file to local.properties and add your Google Maps API key
-## Note: local.properties is ignored by git and will never be committed.
-
-MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY_HERE
-# sdk.dir=C:\\Users\\YOUR_NAME\\AppData\\Local\\Android\\Sdk

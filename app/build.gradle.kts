@@ -78,10 +78,9 @@ dependencies {
 }
 
 secrets {
-    // Read from .env if present in root project, otherwise default to local.properties
-    propertiesFileName = if (rootProject.file(".env").exists()) ".env" else "local.properties"
+    // All API keys and secrets are stored and loaded from the .env file in the root project
+    propertiesFileName = ".env"
     defaultPropertiesFileName = "secrets.defaults.properties"
-    // Ignore Android SDK path in local.properties
     ignoreList.add("sdk.*")
 }
 
