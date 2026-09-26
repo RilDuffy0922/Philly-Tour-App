@@ -1,0 +1,188 @@
+[
+  {
+    "id": "philly-schuylkill",
+    "city": "Philadelphia",
+    "waterway": "Schuylkill River",
+    "name": "Schuylkill Banks Ride",
+    "summary": "Ride downstream from Boathouse Row to America's oldest surviving botanic garden.",
+    "mode": "bike",
+    "stops": [
+      {
+        "id": "boathouse-row",
+        "name": "Boathouse Row",
+        "latitude": 39.9695,
+        "longitude": -75.1874,
+        "radius": 120,
+        "narrationScript": "Welcome to Boathouse Row. These historic boathouses along the Schuylkill are home to the rowing clubs of the Schuylkill Navy, founded in 1858 and one of the oldest amateur athletic governing bodies in the United States. On most mornings you'll see crews gliding past, and at night the boathouses are outlined in lights that reflect off the water, one of the most photographed views in Philadelphia.",
+        "trivia": {
+          "question": "The rowing clubs of Boathouse Row belong to an organization founded in 1858. What is it called?",
+          "options": ["The Schuylkill Navy", "The Delaware Fleet", "The Fairmount Crew Society", "The Philadelphia Rowing League"],
+          "correctIndex": 0
+        }
+      },
+      {
+        "id": "fairmount-water-works",
+        "name": "Fairmount Water Works",
+        "latitude": 39.9658,
+        "longitude": -75.1830,
+        "radius": 90,
+        "narrationScript": "You've reached the Fairmount Water Works. Beginning in 1812, Philadelphia built one of the nation's first municipal water systems here, using the river to pump water up to reservoirs on the hill where the Philadelphia Museum of Art stands today. Its classical buildings and gardens became a tourist attraction of their own, drawing visitors from around the world, including Charles Dickens.",
+        "trivia": {
+          "question": "The Water Works pumped river water up to reservoirs on the hill where which landmark now stands?",
+          "options": ["City Hall", "The Philadelphia Museum of Art", "Eastern State Penitentiary", "Memorial Hall"],
+          "correctIndex": 1
+        }
+      },
+      {
+        "id": "schuylkill-banks-boardwalk",
+        "name": "Schuylkill Banks Boardwalk",
+        "latitude": 39.9455,
+        "longitude": -75.1802,
+        "radius": 100,
+        "narrationScript": "You're on the Schuylkill Banks Boardwalk, which opened in 2014 and carries the trail out over the water itself, from Locust Street down toward South Street. The river's name comes from early Dutch explorers, and is usually translated as hidden river, since its mouth was easy to miss from the Delaware.",
+        "trivia": {
+          "question": "The name 'Schuylkill' comes from which language?",
+          "options": ["Lenape", "German", "Dutch", "Swedish"],
+          "correctIndex": 2
+        }
+      },
+      {
+        "id": "bartrams-garden",
+        "name": "Bartram's Garden",
+        "latitude": 39.9316,
+        "longitude": -75.2115,
+        "radius": 150,
+        "narrationScript": "Welcome to Bartram's Garden, the oldest surviving botanic garden in North America. John Bartram, a self-taught botanist, started it in 1728 and collected plants from across the colonies, trading seeds with scientists in Europe. Today it's a free public park with a community boathouse where you can paddle out onto the tidal Schuylkill.",
+        "trivia": {
+          "question": "Around what year did John Bartram start his garden?",
+          "options": ["1682", "1728", "1776", "1812"],
+          "correctIndex": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "philly-delaware",
+    "city": "Philadelphia",
+    "waterway": "Delaware River",
+    "name": "Delaware Waterfront Walk",
+    "summary": "Stroll the Delaware from the Ben Franklin Bridge to a Spanish-American War cruiser.",
+    "mode": "walk",
+    "stops": [
+      {
+        "id": "race-street-pier",
+        "name": "Race Street Pier",
+        "latitude": 39.9533,
+        "longitude": -75.1398,
+        "radius": 70,
+        "narrationScript": "Welcome to Race Street Pier, a park built on an old shipping pier that reopened to the public in 2011. Look up at the Benjamin Franklin Bridge overhead. When it opened in 1926, its main span was the longest of any suspension bridge in the world, finally giving Philadelphians a way to cross to Camden without a ferry.",
+        "trivia": {
+          "question": "When the Ben Franklin Bridge opened in 1926, what record did it hold?",
+          "options": ["Tallest bridge in America", "First steel bridge in the U.S.", "World's longest suspension span", "First toll bridge on the Delaware"],
+          "correctIndex": 2
+        }
+      },
+      {
+        "id": "penns-landing",
+        "name": "Penn's Landing",
+        "latitude": 39.9478,
+        "longitude": -75.1412,
+        "radius": 80,
+        "narrationScript": "This is Penn's Landing, named for William Penn, who arrived in 1682 to found his colony of Pennsylvania. For more than two centuries this riverfront was one of the busiest ports in America, lined with wharves, warehouses, and ships from around the world. Today the docks have given way to festivals, concerts, and open space along the river.",
+        "trivia": {
+          "question": "In what year did William Penn arrive to found his colony?",
+          "options": ["1609", "1682", "1701", "1776"],
+          "correctIndex": 1
+        }
+      },
+      {
+        "id": "spruce-street-harbor-park",
+        "name": "Spruce Street Harbor Park",
+        "latitude": 39.9446,
+        "longitude": -75.1418,
+        "radius": 60,
+        "narrationScript": "Welcome to Spruce Street Harbor Park, a seasonal park known for its hammocks, floating barges, and glowing lights strung over the marina. Look across the river to Camden, New Jersey. The massive gray ship on the far shore is the Battleship New Jersey, now a museum and the most decorated battleship in U.S. Navy history.",
+        "trivia": {
+          "question": "Which battleship museum can you see across the river in Camden?",
+          "options": ["USS Missouri", "USS Texas", "USS Iowa", "Battleship New Jersey"],
+          "correctIndex": 3
+        }
+      },
+      {
+        "id": "cruiser-olympia",
+        "name": "Cruiser Olympia",
+        "latitude": 39.9416,
+        "longitude": -75.1405,
+        "radius": 60,
+        "narrationScript": "Your last stop is the Cruiser Olympia, docked beside the Independence Seaport Museum. Launched in 1892, she served as Commodore George Dewey's flagship at the Battle of Manila Bay in 1898, and is now the oldest steel warship still afloat in the world. You can step aboard to explore her decks and engine rooms.",
+        "trivia": {
+          "question": "The Olympia was Commodore Dewey's flagship at which battle?",
+          "options": ["Battle of Manila Bay", "Battle of Mobile Bay", "Battle of Midway", "Battle of Santiago de Cuba"],
+          "correctIndex": 0
+        }
+      }
+    ]
+  },
+  {
+    "id": "chicago-riverwalk",
+    "city": "Chicago",
+    "waterway": "Chicago River",
+    "name": "Chicago Riverwalk",
+    "summary": "Follow the Main Branch west from Michigan Avenue to where the river splits.",
+    "mode": "walk",
+    "stops": [
+      {
+        "id": "dusable-bridge",
+        "name": "DuSable Bridge",
+        "latitude": 41.8886,
+        "longitude": -87.6245,
+        "radius": 70,
+        "narrationScript": "You're at the DuSable Bridge on Michigan Avenue, named for Jean Baptiste Point du Sable, Chicago's first permanent non-Native settler. The river below you flows backwards. In 1900 engineers reversed its course so that sewage would flow away from Lake Michigan, the city's drinking water source, and toward the Mississippi instead.",
+        "trivia": {
+          "question": "Before engineers reversed it in 1900, where did the Chicago River flow?",
+          "options": ["Into the Mississippi", "Into Lake Michigan", "Into the Ohio River", "Into Lake Superior"],
+          "correctIndex": 1
+        }
+      },
+      {
+        "id": "marina-city",
+        "name": "Marina City",
+        "latitude": 41.8876,
+        "longitude": -87.6286,
+        "radius": 70,
+        "narrationScript": "Look up at Marina City, the twin round towers designed by architect Bertrand Goldberg in the 1960s. The bottom floors are a spiraling parking garage open to the air, and at water level there's a marina where residents can keep their boats. Chicagoans have a nickname for the towers based on their shape.",
+        "trivia": {
+          "question": "Marina City's towers are famously nicknamed after which food?",
+          "options": ["Corn cobs", "Deep-dish pizzas", "Hot dogs", "Pretzels"],
+          "correctIndex": 0
+        }
+      },
+      {
+        "id": "merchandise-mart",
+        "name": "Merchandise Mart",
+        "latitude": 41.8885,
+        "longitude": -87.6354,
+        "radius": 90,
+        "narrationScript": "That enormous building across the river is the Merchandise Mart. When it opened in 1930 it was the largest building in the world by floor area, so big it had its own zip code. After dark, its riverfront facade becomes a giant screen for art projections.",
+        "trivia": {
+          "question": "When it opened in 1930, the Merchandise Mart was the world's largest building by what measure?",
+          "options": ["Height", "Floor area", "Number of windows", "Weight of steel"],
+          "correctIndex": 1
+        }
+      },
+      {
+        "id": "wolf-point",
+        "name": "Wolf Point",
+        "latitude": 41.8869,
+        "longitude": -87.6375,
+        "radius": 80,
+        "narrationScript": "This is Wolf Point, where the Main Branch of the Chicago River splits into the North and South Branches. In the 1830s this was the heart of the young town, with its first taverns and trading posts. Every year around St. Patrick's Day, the river here turns a bright, unmistakable color, a tradition that began in 1962.",
+        "trivia": {
+          "question": "Since 1962, what color is the Chicago River dyed for St. Patrick's Day?",
+          "options": ["Orange", "Blue", "Green", "Gold"],
+          "correctIndex": 2
+        }
+      }
+    ]
+  }
+]
