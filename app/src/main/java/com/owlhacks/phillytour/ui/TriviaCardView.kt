@@ -1,158 +1,80 @@
 package com.owlhacks.phillytour.ui
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Help
-import androidx.compose.material.icons.filled.HighlightOff
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.owlhacks.phillytour.model.TriviaQuestion
 
 @Composable
-fun TriviaCardView(
+fun TriviaCard(
     trivia: TriviaQuestion,
-    modifier: Modifier = Modifier
+    selected: Int?,
+    onSelect: (Int) -> Unit
 ) {
-    var selectedIndex by remember(trivia) { mutableStateOf<Int?>(null) }
-    var hasSubmitted by remember(trivia) { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = "Trivia",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(text = trivia.question, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
 
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Header Row
+        trivia.options.forEachIndexed { index, option ->
+            val backgroundColor = when {
+                selected == null -> MaterialTheme.colorScheme.surfaceVariant
+                index == trivia.correctIndex -> Color(0x3322C55E)
+                index == selected -> Color(0x33EF4444)
+                else -> MaterialTheme.colorScheme.surfaceVariant
+            }
+
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(backgroundColor)
+                    .clickable(enabled = selected == null) { onSelect(index) }
+                    .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Help,
-                        contentDescription = "Trivia",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = "River Trivia",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                if (hasSubmitted) {
-                    val isCorrect = selectedIndex == trivia.correctIndex
-                    Text(
-                        text = if (isCorrect) "✓ Correct!" else "✕ Try Again",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isCorrect) Color(0xFF16A34A) else Color(0xFFDC2626)
-                    )
+                Text(text = option, modifier = Modifier.weight(1f))
+                if (selected != null) {
+                    if (index == trivia.correctIndex) {
+                        Icon(Icons.Filled.Check, contentDescription = null, tint = Color(0xFF22C55E))
+                    } else if (index == selected) {
+                        Icon(Icons.Filled.Close, contentDescription = null, tint = Color(0xFFEF4444))
+                    }
                 }
             }
+        }
 
-            // Question
+        if (selected != null) {
+            val correct = selected == trivia.correctIndex
             Text(
-                text = trivia.question,
-                style = MaterialTheme.typography.bodyLarge,
+                text = if (correct) "Correct!" else "Not quite — it's ${trivia.options[trivia.correctIndex]}.",
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = if (correct) Color(0xFF16A34A) else Color(0xFFEA580C)
             )
-
-            // Options
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                trivia.options.forEachIndexed { index, option ->
-                    val isCorrectChoice = index == trivia.correctIndex
-                    val isSelected = index == selectedIndex
-
-                    val containerColor = when {
-                        !hasSubmitted -> MaterialTheme.colorScheme.surface
-                        isCorrectChoice -> Color(0xFFDCFCE7)
-                        isSelected -> Color(0xFFFEE2E2)
-                        else -> MaterialTheme.colorScheme.surface
-                    }
-
-                    val borderColor = when {
-                        !hasSubmitted -> MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                        isCorrectChoice -> Color(0xFF22C55E)
-                        isSelected -> Color(0xFFEF4444)
-                        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                    }
-
-                    val contentColor = when {
-                        !hasSubmitted -> MaterialTheme.colorScheme.onSurface
-                        isCorrectChoice -> Color(0xFF15803D)
-                        isSelected -> Color(0xFFB91C1C)
-                        else -> MaterialTheme.colorScheme.onSurface
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            selectedIndex = index
-                            hasSubmitted = true
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = containerColor,
-                            contentColor = contentColor
-                        ),
-                        border = BorderStroke(1.5.dp, borderColor),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = option,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = if (hasSubmitted && isCorrectChoice) FontWeight.Bold else FontWeight.Normal
-                            )
-
-                            if (hasSubmitted) {
-                                if (isCorrectChoice) {
-                                    Icon(
-                                        imageVector = Icons.Default.CheckCircle,
-                                        contentDescription = "Correct",
-                                        tint = Color(0xFF22C55E),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                } else if (isSelected) {
-                                    Icon(
-                                        imageVector = Icons.Default.HighlightOff,
-                                        contentDescription = "Wrong",
-                                        tint = Color(0xFFEF4444),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }

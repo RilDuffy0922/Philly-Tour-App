@@ -1,10 +1,9 @@
 package com.owlhacks.phillytour.model
 
 import com.google.android.gms.maps.model.LatLng
-import java.util.UUID
 
 data class Stop(
-    val id: String = UUID.randomUUID().toString(),
+    val id: String,
     val name: String,
     val latitude: Double,
     val longitude: Double,
