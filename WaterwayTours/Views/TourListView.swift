@@ -3,6 +3,10 @@ import SwiftUI
 struct TourListView: View {
     let tours: [Tour]
 
+    @AppStorage("hasSeenTutorial") private var hasSeenTutorial = false
+    @State private var showingTutorial = false
+    @State private var showingSettings = false
+
     /// Cities in the order they first appear in tours.json.
     private var toursByCity: [(city: String, tours: [Tour])] {
         var cities: [String] = []
@@ -24,6 +28,23 @@ struct TourListView: View {
                 }
             }
             .navigationTitle("Waterway Tours")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("How it works", systemImage: "questionmark.circle") { showingTutorial = true }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Settings", systemImage: "gearshape") { showingSettings = true }
+                }
+            }
+            .sheet(isPresented: $showingTutorial, onDismiss: { hasSeenTutorial = true }) {
+                TutorialView()
+            }
+            .sheet(isPresented: $showingSettings) {
+                SettingsView { showingTutorial = true }
+            }
+            .onAppear {
+                if !hasSeenTutorial { showingTutorial = true }
+            }
             .navigationDestination(for: Tour.self) { tour in
                 TourView(tour: tour)
             }

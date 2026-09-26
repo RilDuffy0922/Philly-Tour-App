@@ -11,26 +11,32 @@ final class Narrator: NSObject {
     @ObservationIgnored private let synthesizer = AVSpeechSynthesizer()
     @ObservationIgnored private var player: AVAudioPlayer?
     @ObservationIgnored private var loading: Task<Void, Never>?
-    @ObservationIgnored private let eleven: ElevenLabsClient?
+    @ObservationIgnored private let apiKey: String?
+    @ObservationIgnored private let defaultVoiceID: String
 
-    var hasCloudVoice: Bool { eleven != nil }
+    var hasCloudVoice: Bool { apiKey != nil }
+
+    /// The voice the rider picked in Settings, or the default.
+    var voiceID: String { UserDefaults.standard.string(forKey: OtterVoice.storageKey) ?? defaultVoiceID }
 
     init(secrets: Secrets = .shared) {
-        eleven = secrets.elevenLabsAPIKey.map { ElevenLabsClient(apiKey: $0, voiceID: secrets.elevenLabsVoiceID) }
+        apiKey = secrets.elevenLabsAPIKey
+        defaultVoiceID = secrets.elevenLabsVoiceID
         super.init()
         synthesizer.delegate = self
     }
 
     /// Speaks `text`. When `systemVoiceFallback` is false and no ElevenLabs voice is available, stays silent.
-    func speak(_ text: String, systemVoiceFallback: Bool = true) {
+    func speak(_ text: String, systemVoiceFallback: Bool = true, voiceID override: String? = nil) {
         cancelCurrent()
         currentText = text
 
-        guard let eleven else {
+        guard let apiKey else {
             if systemVoiceFallback { speakWithSystemVoice(text) } else { currentText = nil }
             return
         }
 
+        let eleven = ElevenLabsClient(apiKey: apiKey, voiceID: override ?? voiceID)
         loading = Task { [weak self] in
             do {
                 let audio = try await eleven.speech(for: text)

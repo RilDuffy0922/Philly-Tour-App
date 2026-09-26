@@ -37,8 +37,17 @@ struct StopSheet: View {
                             Text("Narration starts automatically when you're within \(Int(stop.radius)) m of this stop. Trivia unlocks when you arrive.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
-                            Button("I'm here", systemImage: "mappin.and.ellipse", action: onArrive)
-                                .buttonStyle(.borderedProminent)
+                            HStack {
+                                Button("I'm here", systemImage: "mappin.and.ellipse", action: onArrive)
+                                    .buttonStyle(.borderedProminent)
+                                if !session.skipped.contains(stop.id) {
+                                    Button("Skip this stop", systemImage: "forward.fill") {
+                                        session.skip(stop)
+                                        dismiss()
+                                    }
+                                    .buttonStyle(.bordered)
+                                }
+                            }
                         }
                     }
                 }

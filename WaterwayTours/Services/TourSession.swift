@@ -7,6 +7,7 @@ import Observation
 final class TourSession {
     let tour: Tour
     private(set) var visited: Set<Stop.ID>
+    private(set) var skipped: Set<Stop.ID>
     private(set) var answers: [Stop.ID: Int]
     /// Stops in tour order. Starts as the authored order, then is re-sorted from the rider's position.
     private(set) var stops: [Stop]
@@ -20,6 +21,7 @@ final class TourSession {
         self.tour = tour
         let saved = Progress.load(tourID: tour.id)
         visited = saved.visited
+        skipped = saved.skipped ?? []
         answers = saved.answers
         if let order = saved.order {
             let byID = Dictionary(uniqueKeysWithValues: tour.stops.map { ($0.id, $0) })
@@ -33,7 +35,7 @@ final class TourSession {
     }
 
     /// True until the stops have been sorted from the rider's location.
-    var needsOrdering: Bool { !isOrdered && visited.isEmpty }
+    var needsOrdering: Bool { !isOrdered && visited.isEmpty && skipped.isEmpty }
 
     /// Makes the stop closest to `location` the first stop, then chains each next-closest stop after it.
     func orderStops(from location: CLLocation) {
@@ -51,8 +53,8 @@ final class TourSession {
         save()
     }
 
-    var nextStop: Stop? { stops.first { !visited.contains($0.id) } }
-    var isComplete: Bool { visited.count == stops.count }
+    var nextStop: Stop? { stops.first { !visited.contains($0.id) && !skipped.contains($0.id) } }
+    var isComplete: Bool { nextStop == nil }
     var correctAnswers: Int {
         tour.stops.filter { answers[$0.id] == $0.trivia.correctIndex }.count
     }
@@ -65,7 +67,7 @@ final class TourSession {
     func stopArrived(at location: CLLocation) -> Stop? {
         guard location.horizontalAccuracy >= 0, location.horizontalAccuracy <= maxUsableAccuracy else { return nil }
         return stops
-            .filter { !visited.contains($0.id) }
+            .filter { !visited.contains($0.id) && !skipped.contains($0.id) }
             .map { (stop: $0, distance: location.distance(from: $0.location)) }
             .filter { $0.distance <= $0.stop.radius }
             .min { $0.distance < $1.distance }?
@@ -74,6 +76,14 @@ final class TourSession {
 
     func markVisited(_ stop: Stop) {
         visited.insert(stop.id)
+        skipped.remove(stop.id)
+        save()
+    }
+
+    /// Drops a stop the rider isn't interested in; it no longer counts as "next" or triggers on arrival.
+    func skip(_ stop: Stop) {
+        guard !visited.contains(stop.id) else { return }
+        skipped.insert(stop.id)
         save()
     }
 
@@ -85,6 +95,7 @@ final class TourSession {
 
     func reset() {
         visited = []
+        skipped = []
         answers = [:]
         stops = tour.stops
         isOrdered = false
@@ -92,12 +103,13 @@ final class TourSession {
     }
 
     private func save() {
-        Progress(visited: visited, answers: answers, order: isOrdered ? stops.map(\.id) : nil).save(tourID: tour.id)
+        Progress(visited: visited, skipped: skipped, answers: answers, order: isOrdered ? stops.map(\.id) : nil).save(tourID: tour.id)
     }
 }
 
 private struct Progress: Codable {
     var visited: Set<String> = []
+    var skipped: Set<String>?
     var answers: [String: Int] = [:]
     var order: [String]?
 
