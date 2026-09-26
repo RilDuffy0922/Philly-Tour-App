@@ -111,7 +111,8 @@ The otter mascot's lines are written by the Gemini API and read aloud with an El
 
 1. Copy `Secrets.example.plist` to `WaterwayTours/Resources/Secrets.plist` (it is git-ignored).
 2. Fill in `GeminiAPIKey` and `ElevenLabsAPIKey`. Change `ElevenLabsVoiceID` to pick a different voice.
-3. Build and run.
+3. Run `scripts/check-keys.sh` to confirm both keys work. It says which one is wrong, and never prints the keys.
+4. Build and run.
 
 Generated lines are saved on the device and audio is cached, so each line is only generated once.
 

@@ -16,7 +16,8 @@ struct Secrets {
             .flatMap { NSDictionary(contentsOf: $0) as? [String: String] } ?? [:]
 
         func value(_ key: String) -> String? {
-            guard let raw = values[key]?.trimmingCharacters(in: .whitespacesAndNewlines),
+            // Pasted keys often pick up stray spaces, newlines, or quote marks.
+            guard let raw = values[key]?.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "\"'"))),
                   !raw.isEmpty, !raw.hasPrefix("YOUR_") else { return nil }
             return raw
         }
